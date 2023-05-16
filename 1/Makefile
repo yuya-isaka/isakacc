@@ -6,6 +6,6 @@ test: isakacc
 isakacc: isakacc.c
 
 clean:
-	rm -f isakacc *.o *~ tmp*
+	rm -f *~ isakacc tmp* *.o
 
 .PHONY: test clean

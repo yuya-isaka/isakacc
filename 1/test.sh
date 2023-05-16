@@ -9,15 +9,15 @@ assert() {
 	./tmp
 	actual="$?"
 
-	if [ "$actual" = "$expected" ]; then
-		echo "$input => $actual"
+	if [ "$expected" = "$actual" ]; then
+		echo "$input => $expected"
 	else
 		echo "$input => $expected expected, but got $actual"
 		exit 1
 	fi
 }
 
-assert 0 0
+assert 1 1
 assert 42 42
 
 echo OK
