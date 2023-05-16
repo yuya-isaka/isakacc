@@ -1,0 +1,28 @@
+- gcc
+- make
+- git
+- binutils
+- libc6-dev
+
+- objdump -d -M intel ... Intel記法で出力
+- .intel_syntax noprefix ... Intel記法だよ
+- ファイルスコープじゃなくてプログラム全体から見える .globl
+- rdi
+- rsi
+- rax
+- call
+- ret
+- スタックポインタ
+- リターンアドレス
+- mov
+- add
+- sub
+- リンカもABI準拠 ... レジスタ名を間違えたらリンカが知らないよって怒ってくれた
+- 生命の起源
+- godbolt
+- /bin/ls
+- プログラマの道具箱
+- 0-255 Unixの終了コード
+- AT&T Unixの標準
+- 再帰下降構文解析（recursive descent parser)
+- GCCもClangもこれ↑
