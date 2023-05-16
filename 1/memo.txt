@@ -37,6 +37,6 @@ int plus(int a, int b) {
 int main(int argc, char **argv) {
 	return plus(3, 4);
 }
-- isakacc.c 引数に受け取った個数を返すアセンブリを出力するコンパイラ
+- isakacc.c 引数に受け取った値を、戻り値として返すアセンブリを出力するコンパイラ, 整数1個を返す処理ができる最小限のコンパイラ
 - test.sh テストフレームワーク
 - Makefile isakacc.c用
