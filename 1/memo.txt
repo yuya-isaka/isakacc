@@ -26,3 +26,17 @@
 - AT&T Unixの標準
 - 再帰下降構文解析（recursive descent parser)
 - GCCもClangもこれ↑
+
+書くもの
+- test2.s 42を返すアセンブリ
+- test3.s 下記のC言語を表現するアセンブリ
+int plus(int a, int b) {
+	return a + b;
+}
+
+int main(int argc, char **argv) {
+	return plus(3, 4);
+}
+- isakacc.c 引数に受け取った個数を返すアセンブリを出力するコンパイラ
+- test.sh テストフレームワーク
+- Makefile isakacc.c用
