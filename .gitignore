@@ -1,6 +1,8 @@
 .DS_Store
-*~
-*.o
-tmp*
-a.out
-isakacc
+**/*~
+**/\#*
+**/*.o
+**/*.s
+**/a.out
+**/tmp*
+**/isakacc
