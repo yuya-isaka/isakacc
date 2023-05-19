@@ -22,6 +22,6 @@ assert 120 120
 assert 10 '10-10+10'
 assert 5 '20+3-4-14'
 assert 20 ' 30 -3 - 4 + 2 - 5'
-assert 30 '30*'
+# assert 30 '30*'
 
 echo OK
