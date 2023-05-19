@@ -1,19 +1,11 @@
-#include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
 
-static void error(char *fmt, ...)
-{
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-	va_end(ap);
-	exit(EXIT_FAILURE);
-}
+static char *user_input;
 
 typedef enum
 {
@@ -33,6 +25,32 @@ struct Token
 	int len;
 };
 
+static void error(char *loc, char *fmt, va_list ap)
+{
+	int pos = loc - user_input;
+	fprintf(stderr, "%s\n", user_input);
+	fprintf(stderr, "%*s", pos, "");
+	fprintf(stderr, "^ ");
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
+
+static void error_tok(Token *tok, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	error(tok->loc, fmt, ap);
+}
+
+static void error_at(char *loc, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	error(loc, fmt, ap);
+}
+
 static Token *new_token(TokenKind kind, char *start, char *end)
 {
 	Token *new = calloc(1, sizeof(Token));
@@ -42,8 +60,9 @@ static Token *new_token(TokenKind kind, char *start, char *end)
 	return new;
 }
 
-static Token *tokenize(char *p)
+static Token *tokenize()
 {
+	char *p = user_input;
 	Token head = {};
 	Token *cur = &head;
 
@@ -51,6 +70,13 @@ static Token *tokenize(char *p)
 	{
 		if (isspace(*p))
 		{
+			p++;
+			continue;
+		}
+
+		if (*p == '+' || *p == '-')
+		{
+			cur = cur->next = new_token(TK_PUNCT, p, p + 1);
 			p++;
 			continue;
 		}
@@ -64,12 +90,7 @@ static Token *tokenize(char *p)
 			continue;
 		}
 
-		if (*p == '+' || *p == '-')
-		{
-			cur = cur->next = new_token(TK_PUNCT, p, p + 1);
-			p++;
-			continue;
-		}
+		error_at(p, "invalid_token\n");
 	}
 
 	cur = cur->next = new_token(TK_EOF, p, p);
@@ -79,28 +100,29 @@ static Token *tokenize(char *p)
 static int get_number(Token *tok)
 {
 	if (tok->kind != TK_NUM)
-		error("not number\n");
+		error_tok(tok, "not a number\n");
 	return tok->val;
 }
 
-static bool equal(Token *tok, char *op)
+static bool equal(Token *tok, char *target)
 {
-	return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0';
+	return memcmp(tok->loc, target, tok->len) == 0 && target[tok->len] == '\0';
 }
 
-static Token *skip(Token *tok, char *op)
+static Token *skip(Token *tok, char *target)
 {
-	if (!equal(tok, op))
-		error("expected %s\n", op);
+	if (!equal(tok, target))
+		error_tok(tok, "No Target %s:%d:%d:%s", tok->loc, tok->len, tok->val, target);
 	return tok->next;
 }
 
 int main(int argc, char **argv)
 {
 	if (argc != 2)
-		error("%s invalid argument\n", argv[0]);
+		error_at(argv[1], "%s: 引数の個数が違うよー\n", argv[0]);
 
-	Token *tok = tokenize(argv[1]);
+	user_input = argv[1];
+	Token *tok = tokenize();
 
 	printf(".globl main\n\n");
 	printf("main:\n");
@@ -122,5 +144,5 @@ int main(int argc, char **argv)
 	}
 
 	printf("	ret\n");
-	return 0;
+	return 1;
 }
