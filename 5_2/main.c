@@ -125,7 +125,8 @@ typedef enum
 	ND_SUB,
 	ND_MUL,
 	ND_DIV,
-	ND_NUM
+	ND_NUM,
+	ND_NEG
 } NodeKind;
 
 typedef struct Node Node;
@@ -159,8 +160,16 @@ static Node *new_num(int val)
 	return node;
 }
 
+static Node *new_unary(NodeKind kind, Node *lhs)
+{
+	Node *node = new_node(kind);
+	node->lhs = lhs;
+	return node;
+}
+
 static Node *expr(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
+static Node *unary(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 
 static Node *expr(Token **rest, Token *tok)
@@ -188,19 +197,19 @@ static Node *expr(Token **rest, Token *tok)
 
 static Node *mul(Token **rest, Token *tok)
 {
-	Node *node = primary(&tok, tok);
+	Node *node = unary(&tok, tok);
 
 	for (;;)
 	{
 		if (equal(tok, "*"))
 		{
-			node = new_binary(ND_MUL, node, primary(&tok, tok->next));
+			node = new_binary(ND_MUL, node, unary(&tok, tok->next));
 			continue;
 		}
 
 		if (equal(tok, "/"))
 		{
-			node = new_binary(ND_DIV, node, primary(&tok, tok->next));
+			node = new_binary(ND_DIV, node, unary(&tok, tok->next));
 			continue;
 		}
 
@@ -209,13 +218,23 @@ static Node *mul(Token **rest, Token *tok)
 	}
 }
 
+static Node *unary(Token **rest, Token *tok)
+{
+	if (equal(tok, "+"))
+		return unary(rest, tok->next);
+
+	if (equal(tok, "-"))
+		return new_unary(ND_NEG, unary(rest, tok->next));
+
+	return primary(rest, tok);
+}
+
 static Node *primary(Token **rest, Token *tok)
 {
 	if (equal(tok, "("))
 	{
 		Node *node = expr(&tok, tok->next);
-		tok = skip(tok, ")");
-		*rest = tok;
+		*rest = skip(tok, ")");
 		return node;
 	}
 
@@ -247,8 +266,13 @@ static void pop(char *target)
 
 static void gen_expr(Node *node)
 {
-	if (node->kind == ND_NUM)
+	switch (node->kind)
 	{
+	case ND_NEG:
+		gen_expr(node->lhs);
+		printf("	neg %%rax\n");
+		return;
+	case ND_NUM:
 		printf("	mov $%d, %%rax\n", node->val);
 		return;
 	}
