@@ -410,6 +410,9 @@ int main(int argc, char **argv)
 
 	gen_expr(node);
 
+	if (tok->kind != TK_EOF)
+		error_tok(tok, "invalid EOF\n");
+
 	printf("	ret\n");
 	assert(depth == 0);
 	return 0;
