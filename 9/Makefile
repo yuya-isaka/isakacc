@@ -1,7 +1,11 @@
 CFLAGS=-std=c11 -g -fno-common
+SRCS=$(wildcard *c)
+OBJS=$(SRCS:.c=.o)
 
-isakacc: main.o
-	$(CC) -o isakacc main.o $(LDFLAGS)
+isakacc: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(OBJS): isakacc.h
 
 test: isakacc
 	./test.sh
