@@ -18,9 +18,14 @@ static void pop(char *target)
 
 static void gen_addr(Node *node)
 {
-	int offset = (node->name - 'a' + 1) * 8;
-	printf("	lea -%d(%%rbp), %%rax\n", offset);
-	return;
+	if (node->kind == ND_IDENT)
+	{
+		int offset = (node->name - 'a' + 1) * 8;
+		printf("	lea -%d(%%rbp), %%rax\n", offset);
+		return;
+	}
+
+	error("error gen_addr\n");
 }
 
 static void gen_expr(Node *node)
