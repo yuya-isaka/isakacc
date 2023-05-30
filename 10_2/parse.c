@@ -50,8 +50,8 @@ static Node *new_ident(char name)
 }
 
 static Node *stmt(Token **rest, Token *tok);
-static Node *assign(Token **rest, Token *tok);
 static Node *expr(Token **rest, Token *tok);
+static Node *assign(Token **rest, Token *tok);
 static Node *equivalent(Token **rest, Token *tok);
 static Node *relation(Token **rest, Token *tok);
 static Node *add(Token **rest, Token *tok);
@@ -61,14 +61,19 @@ static Node *primary(Token **rest, Token *tok);
 
 static Node *stmt(Token **rest, Token *tok)
 {
-	Node *node = new_unary(ND_EXPR_STMT, assign(&tok, tok));
+	Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
 	*rest = skip(tok, ";");
 	return node;
 }
 
+static Node *expr(Token **rest, Token *tok)
+{
+	return assign(rest, tok);
+}
+
 static Node *assign(Token **rest, Token *tok)
 {
-	Node *node = expr(&tok, tok);
+	Node *node = equivalent(&tok, tok);
 	if (equal(tok, "="))
 	{
 		node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next));
@@ -76,11 +81,6 @@ static Node *assign(Token **rest, Token *tok)
 
 	*rest = tok;
 	return node;
-}
-
-static Node *expr(Token **rest, Token *tok)
-{
-	return equivalent(rest, tok);
 }
 
 static Node *equivalent(Token **rest, Token *tok)
