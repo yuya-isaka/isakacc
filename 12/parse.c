@@ -7,6 +7,13 @@ static bool equal(Token *tok, char *target)
 	return memcmp(tok->loc, target, tok->len) == 0 && target[tok->len] == '\0';
 }
 
+static Token *skip(Token *tok, char *target)
+{
+	if (!equal(tok, target))
+		error_tok(tok, "error skip");
+	return tok->next;
+}
+
 static Node *new_node(NodeKind kind)
 {
 	Node *node = calloc(1, sizeof(Node));
@@ -77,9 +84,7 @@ static Node *primary(Token **rest, Token *tok);
 static Node *stmt(Token **rest, Token *tok)
 {
 	Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
-	if (!equal(tok, ";"))
-		error_tok(tok, "error stmt");
-	*rest = tok->next;
+	*rest = skip(tok, ";");
 	return node;
 }
 
@@ -213,9 +218,7 @@ static Node *primary(Token **rest, Token *tok)
 	if (equal(tok, "("))
 	{
 		Node *node = expr(&tok, tok->next);
-		if (!equal(tok, ")"))
-			error_tok(tok, "error primary");
-		*rest = tok->next;
+		*rest = skip(tok, ")");
 		return node;
 	}
 
