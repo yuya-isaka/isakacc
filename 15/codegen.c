@@ -153,7 +153,7 @@ static void gen_stmt(Node *node)
 		printf(".L.begin.%d:\n", c);
 		if (node->cond)
 		{
-			gen_stmt(node->cond);
+			gen_expr(node->cond);
 			printf("	cmp $0, %%rax\n");
 			printf("	je .L.end.%d\n", c);
 		}
