@@ -62,11 +62,27 @@ typedef enum
 	ND_EXPR_STMT,
 } NodeKind;
 
+typedef struct Type Type;
+
+typedef enum
+{
+	TY_PTR,
+	TY_INT,
+} TypeKind;
+struct Type
+{
+	TypeKind kind;
+	Type *base;
+};
+
+extern Type *ty_int;
+
 typedef struct Node Node;
 struct Node
 {
 	NodeKind kind;
 	Token *tok;
+	Type *ty;
 	Node *next;
 
 	Node *lhs;
@@ -98,3 +114,6 @@ bool equal(Token *tok, char *target);
 Token *skip(Token *tok, char *target);
 
 void codegen(Function *prog);
+
+bool is_integer(Type *ty);
+void add_type(Node *node);
