@@ -2,11 +2,19 @@
 
 static Obj *locals;
 
-static Node *new_token(NodeKind kind, Token *tok)
+static Node *new_node(NodeKind kind, Token *tok)
 {
 	Node *node = calloc(1, sizeof(Node));
 	node->kind = kind;
 	node->tok = tok;
+	return node;
+}
+
+static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok)
+{
+	Node *node = new_node(kind, tok);
+	node->lhs = lhs;
+	node->rhs = rhs;
 	return node;
 }
 
@@ -25,7 +33,7 @@ static Node *primary(Token **rest, Token *tok);
 static Node *stmt(Token **rest, Token *tok)
 {
 	if (equal(tok, "{"))
-		return compound_stmt(rest, tok);
+		return compound_stmt(rest, tok->next);
 
 	if (equal(tok, "return"))
 	{
@@ -41,10 +49,11 @@ static Node *stmt(Token **rest, Token *tok)
 		tok = skip(tok->next, "(");
 		node->cond = expr(&tok, tok);
 		tok = skip(tok, ")");
-		node->then = stmt(&tok, tok);		   // TODO
-		if (equal(tok, "else"))				   // TODO
-			node->els = stmt(&tok, tok->next); // TODO
-		*rest = tok;						   // TODO
+		node->then = stmt(&tok, tok);
+		if (equal(tok, "else"))
+			node->els = stmt(&tok, tok);
+
+		*rest = tok;
 		return node;
 	}
 
@@ -52,7 +61,7 @@ static Node *stmt(Token **rest, Token *tok)
 	{
 		Node *node = new_token(ND_FOR, tok);
 		tok = skip(tok->next, "(");
-		node->init = gen_expr(&tok, tok);
+		node->init = expr_stmt(&tok, tok);
 
 		if (!equal(tok, ";"))
 			node->cond = expr(&tok, tok);
@@ -62,8 +71,7 @@ static Node *stmt(Token **rest, Token *tok)
 			node->inc = expr(&tok, tok);
 		tok = skip(tok, ")");
 
-		node->then = stmt(rest, tok); // TODO
-
+		node->then = stmt(rest, tok);
 		return node;
 	}
 
@@ -73,8 +81,7 @@ static Node *stmt(Token **rest, Token *tok)
 		tok = skip(tok->next, "(");
 		node->cond = expr(&tok, tok);
 		tok = skip(tok, ")");
-		node->then = stmt(rest, tok); // TODO
-
+		node->then = stmt(rest, tok);
 		return node;
 	}
 
@@ -86,13 +93,14 @@ static Node *compound_stmt(Token **rest, Token *tok)
 	Node head = {};
 	Node *cur = &head;
 
-	Node *node = new_token(ND_BLOCK, tok);
+	Node *node = new_node(ND_BLOCK, tok);
 
 	while (!equal(tok, "}"))
 		cur = cur->next = stmt(&tok, tok);
 
 	node->body = head.next;
-	*rest = tok->next; // TODO
+
+	*rest = tok->next;
 	return node;
 }
 
@@ -104,8 +112,8 @@ static Node *expr_stmt(Token **rest, Token *tok)
 		return new_node(ND_BLOCK, tok);
 	}
 
-	Node *node = new_node(ND_EXPR_STMT, tok); // TODO
-	node->lhs = expr(&tok, tok);			  // TODO
+	Node *node = new_node(ND_EXPR_STMT, tok);
+	node->lhs = expr(&tok, tok);
 	*rest = skip(tok, ";");
 	return node;
 }
@@ -120,7 +128,7 @@ static Node *assign(Token **rest, Token *tok)
 	Node *node = equivalent(&tok, tok);
 
 	if (equal(tok, "="))
-		return new_binary(ND_ASSIGN, node, assign(rest, tok->next), tok); // TODO
+		return new_binary(ND_ASSIGN, node, assign(rest, tok->next), tok);
 
 	*rest = tok;
 	return node;
@@ -132,17 +140,17 @@ static Node *equivalent(Token **rest, Token *tok)
 
 	for (;;)
 	{
-		Token *start = tok; // TODO
+		Token *start = tok;
 
 		if (equal(tok, "=="))
 		{
-			node = new_binary(ND_EQ, node, relation(&tok, tok), start);
+			node = new_binary(ND_EQ, node, relation(&tok, tok->next), start);
 			continue;
 		}
 
 		if (equal(tok, "!="))
 		{
-			node = new_binary(ND_NE, node, relation(&tok, tok), start);
+			node = new_binary(ND_NE, node, relation(&tok, tok->next), start);
 			continue;
 		}
 
