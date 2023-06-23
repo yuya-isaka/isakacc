@@ -37,11 +37,22 @@ static void assign_offset_locals(Function *prog)
 	prog->stack_size = align_to(offset, 16);
 }
 
+static void gen_expr(Node *node);
+
 static void gen_addr(Node *node)
 {
-	if (node->kind != ND_VAR)
-		error_tok(node->tok, "invalid addr");
-	printf("	lea %d(%%rbp), %%rax\n", node->var->offset);
+	if (node->kind == ND_VAR)
+	{
+		printf("	lea %d(%%rbp), %%rax\n", node->var->offset);
+		return;
+	}
+	else if (node->kind == ND_DEREF)
+	{
+		gen_expr(node->lhs);
+		return;
+	}
+
+	error_tok(node->tok, "invalid addr");
 }
 
 static void gen_expr(Node *node)
@@ -65,6 +76,13 @@ static void gen_expr(Node *node)
 		gen_expr(node->rhs);
 		pop("%rdi");
 		printf("	mov %%rax, (%%rdi)\n");
+		return;
+	case ND_DEREF:
+		gen_expr(node->lhs);
+		printf("	mov (%%rax), %%rax\n");
+		return;
+	case ND_ADDR:
+		gen_addr(node->lhs);
 		return;
 	}
 

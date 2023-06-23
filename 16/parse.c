@@ -291,6 +291,12 @@ static Node *unary(Token **rest, Token *tok)
 	if (equal(tok, "-"))
 		return new_unary(ND_NEG, unary(rest, tok->next), tok);
 
+	if (equal(tok, "*"))
+		return new_unary(ND_DEREF, unary(rest, tok->next), tok);
+
+	if (equal(tok, "&"))
+		return new_unary(ND_ADDR, unary(rest, tok->next), tok);
+
 	return primary(rest, tok);
 }
 
