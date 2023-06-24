@@ -83,9 +83,20 @@ Token *skip(Token *tok, char *target)
 	return tok->next;
 }
 
+bool consume(Token **rest, Token *tok, char *target)
+{
+	if (equal(tok, target))
+	{
+		*rest = tok->next;
+		return true;
+	}
+	*rest = tok;
+	return false;
+}
+
 static bool is_keyword(Token *tok)
 {
-	static char *kw[] = {"return", "for", "while", "if", "else"};
+	static char *kw[] = {"return", "for", "while", "if", "else", "int"};
 	for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
 		if (strncmp(tok->loc, kw[i], tok->len) == 0 && strlen(kw[i]) == tok->len)
 			return true;

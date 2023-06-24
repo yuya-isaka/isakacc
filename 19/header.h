@@ -31,14 +31,6 @@ struct Token
 Token *tokenize(char *p);
 void error_tok(Token *tok, char *fmt, ...);
 
-typedef struct Obj Obj;
-struct Obj
-{
-	Obj *next;
-	char *name;
-	int offset;
-};
-
 typedef enum
 {
 	TY_PTR,
@@ -50,9 +42,19 @@ struct Type
 {
 	TypeKind kind;
 	Type *base;
+	Token *name;
 };
 
 extern Type *ty_int;
+
+typedef struct Obj Obj;
+struct Obj
+{
+	Obj *next;
+	Type *ty;
+	char *name;
+	int offset;
+};
 
 typedef enum
 {
@@ -112,8 +114,10 @@ struct Function
 Function *parse(Token *tok);
 bool equal(Token *tok, char *target);
 Token *skip(Token *tok, char *target);
+bool consume(Token **rest, Token *tok, char *target);
 
 void codegen(Function *prog);
 
 bool is_integer(Type *ty);
 void add_type(Node *node);
+Type *pointer_to(Type *base);
