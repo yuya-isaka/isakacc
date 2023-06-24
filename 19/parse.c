@@ -247,7 +247,7 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok)
 	if (lhs->ty->base && rhs->ty->base)
 		error_tok(tok, "error new_add");
 
-	if (!rhs->ty->base && is_integer(lhs->ty))
+	if (rhs->ty->base && is_integer(lhs->ty))
 	{
 		Node *tmp = lhs;
 		lhs = rhs;
