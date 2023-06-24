@@ -41,6 +41,21 @@ struct Obj
 
 typedef enum
 {
+	TY_PTR,
+	TY_INT,
+} TypeKind;
+
+typedef struct Type Type;
+struct Type
+{
+	TypeKind kind;
+	Type *base;
+};
+
+extern Type *ty_int;
+
+typedef enum
+{
 	ND_ADD,
 	ND_SUB,
 	ND_MUL,
@@ -67,6 +82,7 @@ struct Node
 {
 	NodeKind kind;
 	Token *tok;
+	Type *ty;
 	Node *next;
 
 	Node *lhs;
@@ -98,3 +114,6 @@ bool equal(Token *tok, char *target);
 Token *skip(Token *tok, char *target);
 
 void codegen(Function *prog);
+
+bool is_integer(Type *ty);
+void add_type(Node *node);

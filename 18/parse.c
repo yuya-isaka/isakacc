@@ -128,13 +128,16 @@ static Node *stmt(Token **rest, Token *tok)
 
 Node *compound_stmt(Token **rest, Token *tok)
 {
+	Node *node = new_node(ND_BLOCK, tok);
+
 	Node head = {};
 	Node *cur = &head;
 
-	Node *node = new_node(ND_BLOCK, tok);
-
 	while (!equal(tok, "}"))
+	{
 		cur = cur->next = stmt(&tok, tok);
+		add_type(cur);
+	}
 
 	*rest = tok->next;
 	node->body = head.next;
@@ -233,6 +236,52 @@ static Node *relation(Token **rest, Token *tok)
 	}
 }
 
+static Node *new_add(Node *lhs, Node *rhs, Token *tok)
+{
+	add_type(lhs);
+	add_type(rhs);
+
+	if (is_integer(lhs->ty) && is_integer(rhs->ty))
+		return new_binary(ND_ADD, lhs, rhs, tok);
+
+	if (lhs->ty->base && rhs->ty->base)
+		error_tok(tok, "invalid add");
+
+	if (!lhs->ty->base && rhs->ty->base)
+	{
+		Node *tmp = lhs;
+		lhs = rhs;
+		rhs = tmp;
+	}
+
+	rhs = new_binary(ND_MUL, rhs, new_num(8, tok), tok);
+	return new_binary(ND_ADD, lhs, rhs, tok);
+}
+
+static Node *new_sub(Node *lhs, Node *rhs, Token *tok)
+{
+	add_type(lhs);
+	add_type(rhs);
+
+	if (is_integer(lhs->ty) && is_integer(rhs->ty))
+		return new_binary(ND_SUB, lhs, rhs, tok);
+
+	if (lhs->ty->base && is_integer(rhs->ty))
+	{
+		rhs = new_binary(ND_MUL, rhs, new_num(8, tok), tok);
+		return new_binary(ND_SUB, lhs, rhs, tok);
+	}
+
+	if (lhs->ty->base && rhs->ty->base)
+	{
+		Node *node = new_binary(ND_SUB, lhs, rhs, tok);
+		node->ty = ty_int;
+		return new_binary(ND_DIV, node, new_num(8, tok), tok);
+	}
+
+	error_tok(tok, "invalid operands");
+}
+
 static Node *add(Token **rest, Token *tok)
 {
 	Node *node = mul(&tok, tok);
@@ -243,13 +292,13 @@ static Node *add(Token **rest, Token *tok)
 
 		if (equal(tok, "+"))
 		{
-			node = new_binary(ND_ADD, node, mul(&tok, tok->next), tmp);
+			node = new_add(node, mul(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, "-"))
 		{
-			node = new_binary(ND_SUB, node, mul(&tok, tok->next), tmp);
+			node = new_sub(node, mul(&tok, tok->next), tmp);
 			continue;
 		}
 
