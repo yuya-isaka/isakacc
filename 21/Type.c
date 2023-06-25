@@ -27,7 +27,7 @@ void add_type(Node *node)
 	add_type(node->els);
 	add_type(node->init);
 	add_type(node->inc);
-	for (Node *n = node; n; n = n->next)
+	for (Node *n = node->body; n; n = n->next)
 		add_type(n);
 
 	switch (node->kind)
@@ -40,23 +40,22 @@ void add_type(Node *node)
 	case ND_NEG:
 		node->ty = node->lhs->ty;
 		return;
+	case ND_NUM:
 	case ND_EQ:
 	case ND_NE:
 	case ND_LT:
 	case ND_LE:
-	case ND_NUM:
 		node->ty = ty_int;
 		return;
 	case ND_VAR:
 		node->ty = node->var->ty;
 		return;
 	case ND_ADDR:
+		// printf("aaa %s", strndup(node->lhs->tok->loc, node->lhs->tok->len));
 		node->ty = pointer_to(node->lhs->ty);
+		// printf("aaa %d %d", TY_PTR, node->ty->kind);
 		return;
 	case ND_DEREF:
 		if (node->lhs->ty->kind != TY_PTR)
-			error_tok(node->tok, "error dereference");
-		node->ty = node->lhs->ty->base;
-		return;
-	}
-}
+			error_tok(node->tok, "invalid deref %d %s", node->lhs->ty->kind, strndup(node->lhs->lhs->tok->loc, node->lhs->lhs->tok->len));
+		node->

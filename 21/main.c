@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
 	Function *prog = parse(tok);
 
-	// codegen(prog);
+	codegen(prog);
 
 	return 0;
 }

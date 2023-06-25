@@ -10,50 +10,10 @@ static Node *new_node(NodeKind kind, Token *tok)
 	return node;
 }
 
-static Type *declspec(Token **rest, Token *tok)
+static Node *new_unary(NodeKind kind, Node *lhs, Token *tok)
 {
-	if (equal(tok, "int"))
-	{
-		*rest = tok->next;
-		return ty_int;
-	}
-	error_tok(tok, "invalid declspec");
-}
-
-static Type *declarator(Token **rest, Token *tok, Type *ty)
-{
-	while (consume(&tok, tok, "*"))
-		ty = pointer_to(ty);
-
-	if (tok->kind != TK_IDENT)
-		error_tok(tok, "error declarator");
-
-	ty->name = tok;
-	*rest = tok->next;
-	return ty;
-}
-
-static char *get_ident(Token *tok)
-{
-	if (tok->kind != TK_IDENT)
-		error_tok(tok, "error get_ident");
-	return strndup(tok->loc, tok->len);
-}
-
-static Obj *new_lvar(char *name, Type *ty)
-{
-	Obj *var = calloc(1, sizeof(Obj));
-	var->name = name;
-	var->ty = ty;
-	var->next = locals;
-	locals = var;
-	return var;
-}
-
-static Node *new_var_node(Obj *var, Token *tok)
-{
-	Node *node = new_node(ND_VAR, tok);
-	node->var = var;
+	Node *node = new_node(kind, tok);
+	node->lhs = lhs;
 	return node;
 }
 
@@ -65,17 +25,17 @@ static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok)
 	return node;
 }
 
-static Node *new_unary(NodeKind kind, Node *lhs, Token *tok)
-{
-	Node *node = new_node(kind, tok);
-	node->lhs = lhs;
-	return node;
-}
-
 static Node *new_num(int val, Token *tok)
 {
 	Node *node = new_node(ND_NUM, tok);
 	node->val = val;
+	return node;
+}
+
+static Node *new_var_node(Obj *var, Token *tok)
+{
+	Node *node = new_node(ND_VAR, tok);
+	node->var = var;
 	return node;
 }
 
@@ -86,6 +46,48 @@ static Obj *find_lvar(Token *tok)
 			return cur;
 
 	return NULL;
+}
+
+static Obj *new_lvar(char *name, Type *ty)
+{
+	Obj *var = calloc(1, sizeof(Obj));
+	var->name = name;
+	var->next = locals;
+	var->ty = ty;
+	locals = var;
+	return var;
+}
+
+static char *get_ident(Token *tok)
+{
+	if (tok->kind != TK_IDENT)
+		error_tok(tok, "invalid ident");
+	return strndup(tok->loc, tok->len);
+}
+
+static Type *declspec(Token **rest, Token *tok)
+{
+	if (equal(tok, "int"))
+	{
+		*rest = tok->next;
+		return ty_int;
+	}
+	error_tok(tok, "error spec");
+}
+
+static Type *declarator(Token **rest, Token *tok, Type *ty)
+{
+	while (consume(&tok, tok, "*"))
+	{
+		ty = pointer_to(ty);
+	}
+
+	if (tok->kind != TK_IDENT)
+		error_tok(tok, "invalid ident declarator");
+
+	ty->name = tok;
+	*rest = tok->next;
+	return ty;
 }
 
 static Node *declaration(Token **rest, Token *tok);
@@ -174,7 +176,6 @@ static Node *stmt(Token **rest, Token *tok)
 		tok = skip(tok, ")");
 
 		node->then = stmt(rest, tok);
-
 		return node;
 	}
 
@@ -184,16 +185,14 @@ static Node *stmt(Token **rest, Token *tok)
 		tok = skip(tok->next, "(");
 		node->cond = expr(&tok, tok);
 		tok = skip(tok, ")");
-
 		node->then = stmt(rest, tok);
-
 		return node;
 	}
 
 	return expr_stmt(rest, tok);
 }
 
-static Node *compound_stmt(Token **rest, Token *tok)
+Node *compound_stmt(Token **rest, Token *tok)
 {
 	Node *node = new_node(ND_BLOCK, tok);
 
@@ -209,8 +208,8 @@ static Node *compound_stmt(Token **rest, Token *tok)
 		add_type(cur);
 	}
 
-	node->body = head.next;
 	*rest = tok->next;
+	node->body = head.next;
 	return node;
 }
 
@@ -250,17 +249,17 @@ static Node *equivalent(Token **rest, Token *tok)
 
 	for (;;)
 	{
-		Token *start = tok;
+		Token *tmp = tok;
 
 		if (equal(tok, "=="))
 		{
-			node = new_binary(ND_EQ, node, relation(&tok, tok->next), start);
+			node = new_binary(ND_EQ, node, relation(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, "!="))
 		{
-			node = new_binary(ND_NE, node, relation(&tok, tok->next), start);
+			node = new_binary(ND_NE, node, relation(&tok, tok->next), tmp);
 			continue;
 		}
 
@@ -275,29 +274,29 @@ static Node *relation(Token **rest, Token *tok)
 
 	for (;;)
 	{
-		Token *start = tok;
+		Token *tmp = tok;
 
 		if (equal(tok, "<"))
 		{
-			node = new_binary(ND_LT, node, add(&tok, tok->next), start);
+			node = new_binary(ND_LT, node, add(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, "<="))
 		{
-			node = new_binary(ND_LT, node, add(&tok, tok->next), start);
+			node = new_binary(ND_LE, node, add(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, ">"))
 		{
-			node = new_binary(ND_LT, add(&tok, tok->next), node, start);
+			node = new_binary(ND_LT, add(&tok, tok->next), node, tmp);
 			continue;
 		}
 
 		if (equal(tok, ">="))
 		{
-			node = new_binary(ND_LT, add(&tok, tok->next), node, start);
+			node = new_binary(ND_LE, add(&tok, tok->next), node, tmp);
 			continue;
 		}
 
@@ -315,9 +314,9 @@ static Node *new_add(Node *lhs, Node *rhs, Token *tok)
 		return new_binary(ND_ADD, lhs, rhs, tok);
 
 	if (lhs->ty->base && rhs->ty->base)
-		error_tok(tok, "error new_add");
+		error_tok(tok, "invalid add");
 
-	if (is_integer(lhs->ty) && rhs->ty->base)
+	if (!lhs->ty->base && rhs->ty->base)
 	{
 		Node *tmp = lhs;
 		lhs = rhs;
@@ -349,7 +348,7 @@ static Node *new_sub(Node *lhs, Node *rhs, Token *tok)
 		return new_binary(ND_DIV, node, new_num(8, tok), tok);
 	}
 
-	error_tok(tok, "error new_sub");
+	error_tok(tok, "invalid operands");
 }
 
 static Node *add(Token **rest, Token *tok)
@@ -358,17 +357,17 @@ static Node *add(Token **rest, Token *tok)
 
 	for (;;)
 	{
-		Token *start = tok;
+		Token *tmp = tok;
 
 		if (equal(tok, "+"))
 		{
-			node = new_add(node, mul(&tok, tok->next), start);
+			node = new_add(node, mul(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, "-"))
 		{
-			node = new_sub(node, mul(&tok, tok->next), start);
+			node = new_sub(node, mul(&tok, tok->next), tmp);
 			continue;
 		}
 
@@ -383,17 +382,17 @@ static Node *mul(Token **rest, Token *tok)
 
 	for (;;)
 	{
-		Token *start = tok;
+		Token *tmp = tok;
 
 		if (equal(tok, "*"))
 		{
-			node = new_binary(ND_MUL, node, unary(&tok, tok->next), start);
+			node = new_binary(ND_MUL, node, unary(&tok, tok->next), tmp);
 			continue;
 		}
 
 		if (equal(tok, "/"))
 		{
-			node = new_binary(ND_DIV, node, unary(&tok, tok->next), start);
+			node = new_binary(ND_DIV, node, unary(&tok, tok->next), tmp);
 			continue;
 		}
 
@@ -439,7 +438,7 @@ static Node *primary(Token **rest, Token *tok)
 	{
 		Obj *var = find_lvar(tok);
 		if (!var)
-			error_tok(tok, "undefined ident");
+			error_tok(tok, "undefined variable");
 		*rest = tok->next;
 		return new_var_node(var, tok);
 	}
@@ -454,5 +453,6 @@ Function *parse(Token *tok)
 	Function *prog = calloc(1, sizeof(Function));
 	prog->body = compound_stmt(&tok, tok);
 	prog->locals = locals;
+
 	return prog;
 }

@@ -48,7 +48,7 @@ static void gen_addr(Node *node)
 
 	if (node->kind == ND_DEREF)
 	{
-		gen_expr(node);
+		gen_expr(node->lhs);
 		return;
 	}
 
@@ -71,7 +71,7 @@ static void gen_expr(Node *node)
 		push();
 		gen_expr(node->rhs);
 		pop("%rdi");
-		printf("	mov (%%rdi), %%rax\n");
+		printf("	mov %%rax, (%%rdi)\n");
 		return;
 	case ND_VAR:
 		gen_addr(node);
@@ -110,7 +110,7 @@ static void gen_expr(Node *node)
 	case ND_NE:
 	case ND_LT:
 	case ND_LE:
-		printf("	cmp %%rdi, %%rx\n");
+		printf("	cmp %%rdi, %%rax\n");
 
 		if (node->kind == ND_EQ)
 		{
@@ -126,7 +126,7 @@ static void gen_expr(Node *node)
 		}
 		else
 		{
-			printf("	setlt %%al\n");
+			printf("	setle %%al\n");
 		}
 
 		printf("	movzb %%al, %%rax\n");
@@ -160,14 +160,14 @@ static void gen_stmt(Node *node)
 		printf(".L.else.%d:\n", c);
 		if (node->els)
 			gen_stmt(node->els);
-		printf(".L.end.%d\n", c);
+		printf(".L.end.%d:\n", c);
 		return;
 	}
 	case ND_FOR:
 	{
 		int c = count();
 		if (node->init)
-			gen_expr(node->init);
+			gen_stmt(node->init);
 		printf(".L.start.%d:\n", c);
 		if (node->cond)
 			gen_expr(node->cond);
