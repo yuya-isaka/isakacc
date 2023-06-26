@@ -35,6 +35,7 @@ typedef enum
 {
 	TY_PTR,
 	TY_INT,
+	TY_FUNC,
 } TypeKind;
 
 typedef struct Type Type;
@@ -43,6 +44,7 @@ struct Type
 	TypeKind kind;
 	Type *base;
 	Token *name;
+	Type *return_ty;
 };
 
 extern Type *ty_int;
@@ -109,6 +111,8 @@ struct Node
 typedef struct Function Function;
 struct Function
 {
+	Function *next;
+	char *name;
 	Node *body;
 	Obj *locals;
 	int stack_size;
@@ -123,4 +127,5 @@ void codegen(Function *prog);
 
 bool is_integer(Type *ty);
 void add_type(Node *node);
+Type *func_type(Type *return_ty);
 Type *pointer_to(Type *base);

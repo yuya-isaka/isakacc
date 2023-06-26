@@ -2,6 +2,7 @@
 
 static int depth;
 static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+static Function *current_fn;
 
 static void push()
 {
@@ -28,14 +29,16 @@ static int align_to(int offset, int align)
 
 static void assign_offset_locals(Function *prog)
 {
-	int offset = 0;
-	for (Obj *cur = prog->locals; cur; cur = cur->next)
+	for (Function *fn = prog; fn; fn = fn->next)
 	{
-		offset += 8;
-		cur->offset -= offset;
+		int offset = 0;
+		for (Obj *cur = fn->locals; cur; cur = cur->next)
+		{
+			offset += 8;
+			cur->offset = -offset;
+		}
+		fn->stack_size = align_to(offset, 16);
 	}
-
-	prog->stack_size = align_to(offset, 16);
 }
 
 static void gen_expr(Node *node);
@@ -159,16 +162,12 @@ static void gen_stmt(Node *node)
 	switch (node->kind)
 	{
 	case ND_RETURN:
-		// printf("bbb %s\n", strndup(node->lhs->tok->loc, node->lhs->tok->len));
 		gen_expr(node->lhs);
-		printf("	jmp .L.return\n");
+		printf("	jmp .L.return.%s\n", current_fn->name);
 		return;
 	case ND_BLOCK:
 		for (Node *cur = node->body; cur; cur = cur->next)
-		{
-			// printf("aaa %s\n", strndup(cur->tok->loc, cur->tok->len));
 			gen_stmt(cur);
-		}
 		return;
 	case ND_IF:
 	{
@@ -213,18 +212,22 @@ void codegen(Function *prog)
 {
 	assign_offset_locals(prog);
 
-	printf(".globl main\n\n");
-	printf("main:\n");
+	for (Function *fn = prog; fn; fn = fn->next)
+	{
+		printf("	.globl %s\n", fn->name);
+		printf("%s:\n", fn->name);
+		current_fn = fn;
 
-	printf("	push %%rbp\n");
-	printf("	mov %%rsp, %%rbp\n");
-	printf("	sub $%d, %%rsp\n", prog->stack_size);
+		printf("	push %%rbp\n");
+		printf("	mov %%rsp, %%rbp\n");
+		printf("	sub $%d, %%rsp\n", fn->stack_size);
 
-	gen_stmt(prog->body);
-	assert(depth == 0);
+		gen_stmt(fn->body);
+		assert(depth == 0);
 
-	printf(".L.return:\n");
-	printf("	mov %%rbp, %%rsp\n");
-	printf("	pop %%rbp\n");
-	printf("	ret\n");
+		printf(".L.return.%s:\n", fn->name);
+		printf("	mov %%rbp, %%rsp\n");
+		printf("	pop %%rbp\n");
+		printf("	ret\n");
+	}
 }
