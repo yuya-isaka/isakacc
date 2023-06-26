@@ -77,6 +77,7 @@ typedef enum
 	ND_RETURN,
 	ND_BLOCK,
 	ND_EXPR_STMT,
+	ND_FUNCALL,
 } NodeKind;
 
 typedef struct Node Node;
@@ -101,6 +102,8 @@ struct Node
 
 	int val;
 	Obj *var;
+	char *funcname;
+	Node *args;
 };
 
 typedef struct Function Function;
