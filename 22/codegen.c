@@ -222,7 +222,7 @@ void codegen(Function *prog)
 		gen_stmt(func->body);
 		assert(depth == 0);
 
-		printf(".L.return.%s:", func->name);
+		printf(".L.return.%s:\n", func->name);
 		printf("	mov %%rbp, %%rsp\n");
 		printf("	pop %%rbp\n");
 		printf("	ret\n");
