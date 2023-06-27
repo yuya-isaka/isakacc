@@ -22,6 +22,11 @@ static int count()
 	return i++;
 }
 
+static int align_to(int offset, int align)
+{
+	return (offset + align - 1) / align * align;
+}
+
 static void assign_lvar_offset(Function *prog)
 {
 	for (Function *func = prog; func; func = func->next)
@@ -32,7 +37,7 @@ static void assign_lvar_offset(Function *prog)
 			offset += 8;
 			var->offset = -offset;
 		}
-		func->stack_size = offset;
+		func->stack_size = align_to(offset, 16);
 	}
 }
 
