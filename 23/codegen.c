@@ -32,7 +32,7 @@ static void assign_lvar_offset(Function *prog)
 	for (Function *func = prog; func; func = func->next)
 	{
 		int offset = 0;
-		for (Obj *cur = prog->locals; cur; cur = cur->next)
+		for (Obj *cur = func->locals; cur; cur = cur->next)
 		{
 			offset += 8;
 			cur->offset = -offset;
@@ -223,6 +223,10 @@ void codegen(Function *prog)
 		printf("	push %%rbp\n");
 		printf("	mov %%rsp, %%rbp\n");
 		printf("	sub $%d, %%rsp\n", func->stack_size);
+
+		int i = 0;
+		for (Obj *var = func->params; var; var = var->next)
+			printf("	mov %s, %d(%%rbp)\n", argreg[i++], var->offset);
 
 		gen_stmt(func->body);
 		assert(depth == 0);

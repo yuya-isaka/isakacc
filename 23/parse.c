@@ -19,15 +19,35 @@ static Type *declspec(Token **rest, Token *tok)
 	error_tok(tok, "error declspec");
 }
 
-static Type *type_suffix(Token **rest, Token *tok, Type *ty)
+static Type *declarator(Token **rest, Token *tok, Type *ty);
+
+static Type *type_suffix(Token **rest, Token *tok, Type *base)
 {
 	if (equal(tok, "("))
 	{
-		*rest = skip(tok->next, ")");
-		return type_func(ty);
+		tok = tok->next;
+
+		Type head = {};
+		Type *cur = &head;
+
+		while (!equal(tok, ")"))
+		{
+			if (head.next)
+				tok = skip(tok, ",");
+			Type *basety = declspec(&tok, tok);
+			Type *ty = declarator(&tok, tok, basety);
+			cur = cur->next = copy_type(ty);
+		}
+
+		Type *ty = type_func(base);
+		ty->params = head.next;
+
+		*rest = tok->next;
+		return ty;
 	}
+
 	*rest = tok;
-	return ty;
+	return base;
 }
 
 static Type *declarator(Token **rest, Token *tok, Type *ty)
@@ -472,6 +492,15 @@ static Node *primary(Token **rest, Token *tok)
 	error_tok(tok, "error primary");
 }
 
+static void create_param_lvars(Type *ty)
+{
+	if (ty)
+	{
+		create_param_lvars(ty->next);
+		new_lvar(get_ident(ty->name), ty);
+	}
+}
+
 static Function *function(Token **rest, Token *tok)
 {
 	Type *ty = declspec(&tok, tok);
@@ -480,10 +509,13 @@ static Function *function(Token **rest, Token *tok)
 	locals = NULL;
 
 	Function *prog = calloc(1, sizeof(Function));
+	prog->name = get_ident(ty->name);
+	create_param_lvars(ty->params); // compoundより先にこっちをするのがポイント
+	prog->params = locals;
+
 	tok = skip(tok, "{");
 	prog->body = compound_stmt(rest, tok);
 	prog->locals = locals;
-	prog->name = get_ident(ty->name);
 
 	return prog;
 }

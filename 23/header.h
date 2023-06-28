@@ -40,6 +40,8 @@ struct Type
 	Type *base;
 	Token *name;
 	Type *return_ty;
+	Type *params;
+	Type *next;
 };
 
 extern Type *ty_int;
@@ -112,6 +114,7 @@ struct Function
 	Obj *locals;
 	char *name;
 	int stack_size;
+	Obj *params;
 };
 
 void error(char *fmt, ...);
@@ -126,4 +129,5 @@ Type *pointer_to(Type *base);
 Type *type_func(Type *return_ty);
 void add_type(Node *node);
 bool is_integer(Type *ty);
+Type *copy_type(Type *ty);
 void codegen(Function *prog);
