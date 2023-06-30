@@ -21,7 +21,7 @@ assert () {
 	actual="$?"
 
 	if [ "$actual" = "$expected" ]; then
-		echo "$input => $expected";
+		echo "$input => $expected"
 	else
 		echo "$input => $expected expected, but got $actual"
 		exit 1
