@@ -168,10 +168,11 @@ void gen_stmt(Node *node) {
     if (node->init)
       gen_stmt(node->init);
     printf(".L.begin.%d:\n", c);
-    if (node->cond)
+    if (node->cond) {
       gen_expr(node->cond);
-    printf("	cmp $0, %%rax\n");
-    printf("	je .L.end.%d\n", c);
+      printf("	cmp $0, %%rax\n");
+      printf("	je .L.end.%d\n", c);
+    }
     gen_stmt(node->then);
     if (node->inc)
       gen_expr(node->inc);
