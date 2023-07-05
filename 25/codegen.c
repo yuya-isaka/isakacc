@@ -50,8 +50,8 @@ static void gen_addr(Node *node) {
   error_tok(node->tok, "error addr");
 }
 
-static void load(Type *ty) {
-  if (ty->kind == TY_ARRAY) {
+static void load(Node *node) {
+  if (node->ty->kind == TY_ARRAY) {
     // printf("aaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
     return;
   }
@@ -78,11 +78,11 @@ static void gen_expr(Node *node) {
     return;
   case ND_DEREF:
     gen_expr(node->lhs);
-    load(node->ty);
+    load(node);
     return;
   case ND_VAR:
     gen_addr(node);
-    load(node->ty);
+    load(node);
     return;
   case ND_ASSIGN:
     gen_addr(node->lhs);

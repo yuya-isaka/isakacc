@@ -27,7 +27,7 @@ static void assign_lvar_offset(Function *prog) {
   for (Function *cur = prog; cur; cur = cur->next) {
     int offset = 0;
     for (Obj *var = cur->locals; var; var = var->next) {
-      offset += 8;
+      offset += var->ty->size;
       var->offset = -offset;
     }
     cur->stack_size = align_to(offset, 16);
@@ -49,6 +49,18 @@ static void gen_addr(Node *node) {
   error_tok(node->tok, "error gen_addr");
 }
 
+static void load(Node *node) {
+  if (node->ty->kind == TY_ARRAY)
+    return;
+
+  printf("  mov (%%rax), %%rax\n");
+}
+
+static void store(void) {
+  pop("%rdi");
+  printf("  mov %%rax, (%%rdi)\n");
+}
+
 static void gen_expr(Node *node) {
   switch (node->kind) {
   case ND_NUM:
@@ -60,21 +72,20 @@ static void gen_expr(Node *node) {
     return;
   case ND_VAR:
     gen_addr(node);
-    printf("	mov (%%rax), %%rax\n");
+    load(node);
     return;
   case ND_ASSIGN:
     gen_addr(node->lhs);
     push();
     gen_expr(node->rhs);
-    pop("%rdi");
-    printf("	mov %%rax, (%%rdi)\n");
+    store();
     return;
   case ND_ADDR:
     gen_addr(node->lhs);
     return;
   case ND_DEREF:
     gen_expr(node->lhs);
-    printf("	mov (%%rax), %%rax\n");
+    load(node);
     return;
   case ND_FUNCALL: {
     int nargs = 0;
@@ -166,10 +177,11 @@ static void gen_stmt(Node *node) {
     if (node->init)
       gen_stmt(node->init);
     printf(".L.begin.%d:\n", c);
-    if (node->cond)
+    if (node->cond) {
       gen_expr(node->cond);
-    printf("	cmp $0, %%rax\n");
-    printf("	je .L.end.%d\n", c);
+      printf("	cmp $0, %%rax\n");
+      printf("	je .L.end.%d\n", c);
+    }
     gen_stmt(node->then);
     if (node->inc)
       gen_expr(node->inc);
