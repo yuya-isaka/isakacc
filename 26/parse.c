@@ -486,6 +486,12 @@ static Node *primary(Token **rest, Token *tok) {
     return new_var_node(var, tok);
   }
 
+  if (equal(tok, "sizeof")) {
+    Node *node = unary(rest, tok->next); // ここで作られたノードは消し去られる．
+    add_type(node);
+    return new_num(node->ty->size, tok);
+  }
+
   error_tok(tok, "error primary");
 }
 
