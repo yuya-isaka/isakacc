@@ -51,8 +51,10 @@ static void gen_addr(Node *node) {
 }
 
 static void load(Type *ty) {
-  if (ty->kind == TY_ARRAY)
+  if (ty->kind == TY_ARRAY) {
+    // printf("aaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
     return;
+  }
 
   printf("	mov (%%rax), %%rax\n");
 }
