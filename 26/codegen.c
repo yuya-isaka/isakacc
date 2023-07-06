@@ -72,7 +72,7 @@ static void gen_expr(Node *node) {
     return;
   case ND_VAR:
     gen_addr(node);
-    load(node);
+    load(node); // アドレス呼び出し（Assign）のため
     return;
   case ND_ASSIGN:
     gen_addr(node->lhs);
@@ -85,7 +85,7 @@ static void gen_expr(Node *node) {
     return;
   case ND_DEREF:
     gen_expr(node->lhs);
-    load(node);
+    load(node); // 配列のため
     return;
   case ND_FUNCALL: {
     int nargs = 0;
