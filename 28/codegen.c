@@ -23,8 +23,8 @@ static int align_to(int offset, int align) {
   return (offset + align - 1) / align * align;
 }
 
-static void assign_lvar_offset(Function *prog) {
-  for (Function *cur = prog; cur; cur = cur->next) {
+static void assign_lvar_offset(Obj *prog) {
+  for (Obj *cur = prog; cur; cur = cur->next) {
     int offset = 0;
     for (Obj *var = cur->locals; var; var = var->next) {
       offset += var->ty->size;
@@ -194,10 +194,11 @@ static void gen_stmt(Node *node) {
   error_tok(node->tok, "error statement");
 }
 
-void codegen(Function *prog) {
+void codegen(Obj *prog) {
   assign_lvar_offset(prog);
-  for (Function *cur = prog; cur; cur = cur->next) {
+  for (Obj *cur = prog; cur; cur = cur->next) {
     printf("	.globl %s\n", cur->name);
+    printf("  .text\n");
     printf("%s:\n", cur->name);
     cur_func_name = cur->name;
 

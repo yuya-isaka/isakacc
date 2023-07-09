@@ -1,6 +1,7 @@
 #include "header.h"
 
 static Obj *locals;
+static Obj *globals;
 
 static Type *declspec(Token **rest, Token *tok) {
   if (equal(tok, "int")) {
@@ -74,12 +75,25 @@ static char *get_ident(Token *tok) {
   return strndup(tok->loc, tok->len);
 }
 
-static Obj *new_lvar(char *name, Type *ty) {
+static Obj *new_var(char *name, Type *ty) {
   Obj *var = calloc(1, sizeof(Obj));
   var->name = name;
   var->ty = ty;
+  return var;
+}
+
+static Obj *new_lvar(char *name, Type *ty) {
+  Obj *var = new_var(name, ty);
+  var->is_local = true;
   var->next = locals;
   locals = var;
+  return var;
+}
+
+static Obj *new_gvar(char *name, Type *ty) {
+  Obj *var = new_var(name, ty);
+  var->next = globals;
+  globals = var;
   return var;
 }
 
@@ -492,31 +506,31 @@ static Node *primary(Token **rest, Token *tok) {
   error_tok(tok, "error primary: %s", strndup(tok->loc, tok->len));
 }
 
-static Function *function(Token **rest, Token *tok) {
-  Type *ty = declspec(&tok, tok);
-  ty = declarator(&tok, tok, ty);
+static Token *function(Token *tok, Type *basety) {
+  Type *ty = declarator(&tok, tok, basety);
+
+  Obj *fn = new_gvar(get_ident(ty->name), ty);
+  fn->is_function = true;
 
   locals = NULL;
 
-  Function *prog = calloc(1, sizeof(Function));
-  prog->name = get_ident(ty->name);
   create_lvar_params(ty->params);
-  prog->params = locals;
+  fn->params = locals;
 
   tok = skip(tok, "{");
-  prog->body = compound_stmt(rest, tok);
-  prog->locals = locals;
+  fn->body = compound_stmt(&tok, tok);
+  fn->locals = locals;
 
-  return prog;
+  return tok;
 }
 
-Function *parse(Token *tok) {
-  Function head = {};
-  Function *cur = &head;
+Obj *parse(Token *tok) {
+  globals = NULL;
 
   while (tok->kind != TK_EOF) {
-    cur = cur->next = function(&tok, tok);
+    Type *basety = declspec(&tok, tok);
+    tok = function(tok, basety);
   }
 
-  return head.next;
+  return globals;
 }

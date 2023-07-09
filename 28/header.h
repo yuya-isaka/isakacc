@@ -46,15 +46,6 @@ struct Type {
 
 extern Type *ty_int;
 
-typedef struct Obj Obj;
-struct Obj {
-  Obj *next;
-  Type *ty;
-  char *name;
-
-  int offset;
-};
-
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -77,6 +68,8 @@ typedef enum {
   ND_FOR,
   ND_EXPR_STMT,
 } NodeKind;
+
+typedef struct Obj Obj;
 
 typedef struct Node Node;
 struct Node {
@@ -104,14 +97,18 @@ struct Node {
   Node *args;
 };
 
-typedef struct Function Function;
-struct Function {
-  Function *next;
+struct Obj {
+  Obj *next;
+  Type *ty;
+  char *name;
+  int offset;
+
+  bool is_local;
+  bool is_function;
+
   Node *body;
   Obj *locals;
   Obj *params;
-  char *name;
-
   int stack_size;
 };
 
@@ -128,5 +125,5 @@ Type *array_of(Type *base, int len);
 bool is_integer(Type *ty);
 void add_type(Node *node);
 Token *tokenize(char *p);
-Function *parse(Token *tok);
-void codegen(Function *prog);
+Obj *parse(Token *tok);
+void codegen(Obj *prog);
