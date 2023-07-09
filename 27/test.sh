@@ -14,13 +14,13 @@ assert() {
 	expected="$1"
 	input="$2"
 
-	# ./isakacc "$input" > tmp.s || exit
+	# ./isakacc "$input"
 	./isakacc "$input" > tmp.s || exit
 	gcc -o tmp tmp.s tmp2.o
 	./tmp
 	actual="$?"
 
-	if [ "$actual" = "$expected" ]; then
+	if [ "$expected" = "$actual" ]; then
 		echo "$input => $expected"
 	else
 		echo "$input => $expected expected, but got $actual"
@@ -30,6 +30,7 @@ assert() {
 
 assert 0 'int main() { return 0; }'
 assert 42 'int main() { return 42; }'
+assert 10 'int main() { return 5+5; }'
 assert 21 'int main() { return 5+20-4; }'
 assert 41 'int main() { return  12 + 34 - 5 ; }'
 assert 47 'int main() { return 5+6*7; }'
@@ -157,6 +158,5 @@ assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
 assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
 assert 8 'int main() { int x=1; return sizeof(x=2); }'
 assert 1 'int main() { int x=1; sizeof(x=2); return x; }'
-# assert 0 'int main[3] { return 0; }' 現状行けてまう
 
 echo OK

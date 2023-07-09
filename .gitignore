@@ -7,3 +7,5 @@
 **/a.out
 **/tmp*
 **/isakacc
+**/*.core
+**/core
