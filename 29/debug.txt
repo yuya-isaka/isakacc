@@ -1,8 +1,0 @@
-ulimit -c
-ulimit -c unlimited
-ulimit -c
-
-gdb ./isakacc ...core
-
-bt (バックトレース)
-frame 0 (関数を指定)
