@@ -51,14 +51,20 @@ static void store(void) {
 static void gen_expr(Node *node);
 
 static void gen_addr(Node *node) {
-  if (node->kind == ND_VAR) {
-    printf("	lea %d(%%rbp), %%rax\n", node->var->offset);
+  switch (node->kind) {
+  case ND_VAR:
+    if (!node->var->is_global) {
+      printf("	lea %d(%%rbp), %%rax\n", node->var->offset);
+    } else {
+      printf("  lea %s(%%rip), %%rax\n", node->var->name);
+    }
     return;
-  }
-  if (node->kind == ND_DEREF) {
+  case ND_DEREF:
     gen_expr(node->lhs);
     return;
   }
+
+  error_tok(node->tok, "not an lvalue");
 }
 
 static void gen_expr(Node *node) {
@@ -193,9 +199,19 @@ static void gen_stmt(Node *node) {
   error_tok(node->tok, "error statement");
 }
 
-void codegen(Obj *prog) {
-  assign_lvar_offset(prog);
+static void emit_data(Obj *prog) {
+  for (Obj *var = prog; var; var = var->next) {
+    if (var->is_func)
+      continue;
 
+    printf("  .data\n");
+    printf("  .globl %s\n", var->name);
+    printf("%s:\n", var->name);
+    printf("  .zero %d\n", var->ty->size);
+  }
+}
+
+static void emit_text(Obj *prog) {
   for (Obj *fn = prog; fn; fn = fn->next) {
     if (!fn->is_func)
       continue;
@@ -221,4 +237,10 @@ void codegen(Obj *prog) {
     printf("	pop %%rbp\n");
     printf("	ret\n");
   }
+}
+
+void codegen(Obj *prog) {
+  assign_lvar_offset(prog);
+  emit_data(prog);
+  emit_text(prog);
 }

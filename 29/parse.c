@@ -464,6 +464,11 @@ static Obj *find_lvar(Token *tok) {
   for (Obj *cur = locals; cur; cur = cur->next)
     if (equal(tok, cur->name))
       return cur;
+
+  for (Obj *cur = globals; cur; cur = cur->next)
+    if (equal(tok, cur->name))
+      return cur;
+
   return NULL;
 }
 
@@ -518,13 +523,43 @@ static Token *function(Token *tok, Type *ty) {
   return tok;
 }
 
+static Token *global_variable(Token *tok, Type *basety) {
+  bool first = true;
+
+  while (!consume(&tok, tok, ";")) {
+    if (!first)
+      tok = skip(tok, ",");
+    first = false;
+
+    Type *ty = declarator(&tok, tok, basety);
+    new_gvar(get_ident(ty->name), ty);
+  }
+
+  return tok;
+}
+
+static bool is_function(Token *tok) {
+  if (equal(tok->next, ";"))
+    return false;
+
+  Type dummy = {};
+  Type *ty = declarator(&tok, tok, &dummy);
+  return ty->kind == TY_FUNC;
+}
+
 Obj *parse(Token *tok) {
 
   globals = NULL;
 
   while (tok->kind != TK_EOF) {
-    Type *ty = declspec(&tok, tok);
-    tok = function(tok, ty);
+    Type *base = declspec(&tok, tok);
+
+    if (is_function(tok)) {
+      tok = function(tok, base);
+      continue;
+    }
+
+    tok = global_variable(tok, base);
   }
 
   return globals;
