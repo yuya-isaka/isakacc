@@ -81,7 +81,8 @@ Token *skip(Token *tok, char *target) {
 }
 
 static bool is_keyword(Token *tok) {
-  static char *kw[] = {"return", "if", "else", "for", "while", "int", "sizeof"};
+  static char *kw[] = {"return", "if",  "else",   "for",
+                       "while",  "int", "sizeof", "char"};
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     if (equal(tok, kw[i]))
       return true;
@@ -92,6 +93,18 @@ static void convert_keywords(Token *tok) {
   for (Token *cur = tok; cur->kind != TK_EOF; cur = cur->next)
     if (is_keyword(cur))
       cur->kind = TK_KEYWORD;
+}
+
+static Token *read_string_literal(char *start) {
+  char *p = start + 1;
+  for (; *p != '"'; p++)
+    if (*p == '\n' || *p == '\0')
+      error_at(p, "unclosed string literal");
+
+  Token *tok = new_token(TK_STR, start, p + 1);
+  tok->ty = array_of(ty_char, p - start);
+  tok->str = strndup(start + 1, p - start - 1);
+  return tok;
 }
 
 Token *tokenize(char *p) {
@@ -111,6 +124,12 @@ Token *tokenize(char *p) {
       char *start = p;
       cur->val = strtoul(p, &p, 10);
       cur->len = p - start;
+      continue;
+    }
+
+    if (*p == '"') {
+      cur = cur->next = read_string_literal(p);
+      p += cur->len;
       continue;
     }
 

@@ -4,6 +4,11 @@ static Obj *globals;
 static Obj *locals;
 
 static Type *declspec(Token **rest, Token *tok) {
+  if (equal(tok, "char")) {
+    *rest = tok->next;
+    return ty_char;
+  }
+
   if (equal(tok, "int")) {
     *rest = tok->next;
     return ty_int;
@@ -240,12 +245,16 @@ static Node *stmt(Token **rest, Token *tok) {
   return expr_stmt(rest, tok);
 }
 
+static bool is_typename(Token *tok) {
+  return equal(tok, "int") || equal(tok, "char");
+}
+
 static Node *compound_stmt(Token **rest, Token *tok) {
   Node head = {};
   Node *cur = &head;
 
   while (!equal(tok, "}")) {
-    if (equal(tok, "int"))
+    if (is_typename(tok))
       cur = cur->next = declaration(&tok, tok);
     else
       cur = cur->next = stmt(&tok, tok);
@@ -476,11 +485,32 @@ static Obj *find_var(Token *tok) {
   return NULL;
 }
 
+static char *new_unique_name(void) {
+  static int id = 0;
+  char *buf = calloc(1, 20);
+  sprintf(buf, ".L..%d", id++);
+  return buf;
+}
+
+static Obj *new_anon_gvar(Type *ty) { return new_gvar(new_unique_name(), ty); }
+
+static Obj *new_string_literal(char *literal, Type *ty) {
+  Obj *var = new_anon_gvar(ty);
+  var->init_data = literal;
+  return var;
+}
+
 static Node *primary(Token **rest, Token *tok) {
   if (equal(tok, "(")) {
     Node *node = expr(&tok, tok->next);
     *rest = skip(tok, ")");
     return node;
+  }
+
+  if (tok->kind == TK_STR) {
+    Obj *var = new_string_literal(tok->str, tok->ty);
+    *rest = tok->next;
+    return new_var_node(var, tok);
   }
 
   if (tok->kind == TK_NUM) {

@@ -2,7 +2,8 @@
 
 static char *current_fn_name;
 static int depth;
-static char *argreg[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+static char *argreg8[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
+static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 
 static int count(void) {
   static int i = 0;
@@ -45,7 +46,13 @@ static void emit_data(Obj *prog) {
     printf("\n	.data\n");
     printf("	.globl %s\n", var->name);
     printf("%s:\n", var->name);
-    printf("	.zero %d\n", var->ty->size);
+
+    if (var->init_data) {
+      for (int i = 0; i < var->ty->size; i++)
+        printf("	.byte %d\n", var->init_data[i]);
+    } else {
+      printf("	.zero %d\n", var->ty->size);
+    }
   }
 }
 
@@ -72,12 +79,19 @@ static void load(Node *node) {
   if (node->ty->kind == TY_ARRAY)
     return;
 
-  printf("	mov (%%rax), %%rax\n");
+  if (node->ty->size == 1)
+    printf("	movsbq (%%rax), %%rax\n");
+  else
+    printf("	mov (%%rax), %%rax\n");
 }
 
-static void store(void) {
+static void store(Type *ty) {
   pop("%rdi");
-  printf("	mov %%rax, (%%rdi)\n");
+
+  if (ty->size == 1)
+    printf("	mov %%al, (%%rdi)\n");
+  else
+    printf("	mov %%rax, (%%rdi)\n");
 }
 
 static void gen_expr(Node *node) {
@@ -97,7 +111,7 @@ static void gen_expr(Node *node) {
     gen_addr(node->lhs);
     push();
     gen_expr(node->rhs);
-    store();
+    store(node->ty);
     return;
   case ND_ADDR:
     gen_addr(node->lhs);
@@ -115,7 +129,7 @@ static void gen_expr(Node *node) {
     }
 
     for (int i = nargs - 1; i >= 0; i--)
-      pop(argreg[i]);
+      pop(argreg64[i]);
 
     printf("	mov $0, %%rax\n");
     printf("	call %s\n", node->funcname);
@@ -227,8 +241,12 @@ static void emit_text(Obj *prog) {
     printf("	sub $%d, %%rsp\n", fn->stack_size);
 
     int i = 0;
-    for (Obj *var = fn->params; var; var = var->next)
-      printf("	mov %s, %d(%%rbp)\n", argreg[i++], var->offset);
+    for (Obj *var = fn->params; var; var = var->next) {
+      if (var->ty->size == 1)
+        printf("	mov %s, %d(%%rbp)\n", argreg8[i++], var->offset);
+      else
+        printf("	mov %s, %d(%%rbp)\n", argreg64[i++], var->offset);
+    }
 
     gen_stmt(fn->body);
     assert(depth == 0);

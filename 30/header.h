@@ -12,8 +12,11 @@ typedef enum {
   TK_IDENT,
   TK_PUNCT,
   TK_KEYWORD,
+  TK_STR,
   TK_EOF,
 } TokenKind;
+
+typedef struct Type Type;
 
 typedef struct Token Token;
 struct Token {
@@ -22,16 +25,18 @@ struct Token {
   int val;
   char *loc;
   int len;
+  Type *ty;
+  char *str;
 };
 
 typedef enum {
+  TY_CHAR,
   TY_INT,
   TY_PTR,
   TY_FUNC,
   TY_ARRAY,
 } TypeKind;
 
-typedef struct Type Type;
 struct Type {
   TypeKind kind;
   int size;
@@ -43,6 +48,7 @@ struct Type {
   int array_len;
 };
 
+extern Type *ty_char;
 extern Type *ty_int;
 
 typedef enum {
@@ -104,6 +110,8 @@ struct Obj {
 
   bool is_local;
   bool is_func;
+
+  char *init_data;
 
   Node *body;
   Obj *locals;
