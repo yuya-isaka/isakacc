@@ -136,3 +136,4 @@ Type *array_of(Type *base, int len);
 void add_type(Node *node);
 bool is_integer(Type *ty);
 void codegen(Obj *prog);
+char *format(char *fmt, ...);

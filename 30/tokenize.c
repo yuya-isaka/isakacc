@@ -95,15 +95,61 @@ static void convert_keywords(Token *tok) {
       cur->kind = TK_KEYWORD;
 }
 
-static Token *read_string_literal(char *start) {
-  char *p = start + 1;
-  for (; *p != '"'; p++)
+static char *string_literal_end(char *p) {
+  char *start = p;
+  for (; *p != '"'; p++) {
     if (*p == '\n' || *p == '\0')
-      error_at(p, "unclosed string literal");
+      error_at(start, "unclosed string literal");
+    if (*p == '\\')
+      p++;
+  }
+  return p;
+}
 
-  Token *tok = new_token(TK_STR, start, p + 1);
-  tok->ty = array_of(ty_char, p - start);
-  tok->str = strndup(start + 1, p - start - 1);
+static int read_escaped_char(char *p) {
+  switch (*p) {
+  case 'a':
+    return '\a'; // ベル文字
+  case 'b':
+    return '\b'; // バックスペース
+  case 't':
+    return '\t'; // たぶ
+  case 'n':
+    return '\n'; // 改行
+  case 'v':
+    return '\v'; // 垂直
+  case 'f':
+    return '\f'; // 新しいページ
+  case 'r':
+    return '\r'; // カーソルを行の先頭
+  case 'e':
+    return 27; // エスケープ
+  default:
+    return *p;
+  }
+}
+
+static Token *read_string_literal(char *start) {
+  char *end = string_literal_end(start + 1);
+  // ここでcallocを使うことで末尾に０を入れてヌル文字を作ってる
+  char *buf = calloc(1, end - start);
+  int len = 0;
+
+  // lenは end - start - 1 になる つまり，文字の数
+  for (char *p = start + 1; p < end;) {
+    if (*p == '\\') {
+      buf[len++] = read_escaped_char(p + 1);
+      p += 2;
+    } else {
+      buf[len++] = *p++;
+    }
+  }
+
+  // 次の文字に繋げるために，"a"←endはこれの最後を指しているのでそれ+1したい
+  Token *tok = new_token(TK_STR, start, end + 1);
+  tok->ty = array_of(ty_char, len + 1); // ヌル文字を含めるために+
+  tok->str = buf;
+
   return tok;
 }
 
