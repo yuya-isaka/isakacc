@@ -112,12 +112,53 @@ assert 7 'int main() { return add2(3,4); } int add2(int x, int y) { return x+y; 
 assert 1 'int main() { return sub2(4,3); } int sub2(int x, int y) { return x-y; }'
 assert 55 'int main() { return fib(9); } int fib(int x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
 
+# # ポインタや配列を関数に渡すのもできている．
+assert 6 'int main() { int x = 3; return addadd(&x,&x); } int addadd(int *x, int *y) { return *x+*y; }'
+assert 11 'int main() { int x[2]; *x=5;  x[1]=6; return addadd(&x[0] ,&x[1]); } int addadd(int *x, int *y) { return *x+*y; }'
+assert 11 'int main() { int x[2]; *x=5;  x[1]=6; return addadd(x[0] ,x[1]); } int addadd(int x, int y) { return x+y; }'
+assert 11 'int main() { int x[2]; *x=5;  x[1]=6; return addadd(x ,x[1]); } int addadd(int *x, int y) { return *x+y; }'
+assert 7 'int main() { char x[10]; x[0] = 3; x[1] = 4; return print(x); } int print(char *x) { return x[0] + x[1]; }'
+assert 3 'int main() { char x; x = 3; return print(x); } int print(char x) { return x; }'
+assert 3 'int main() { int y; int *x = &y; *x = 3; return print(x); } int print(int *x) { return *x; }'
+assert 3 'int main() { char y; char *x = &y; *x = 3; return print(x); } int print(char *x) { return *x; }'
+# # ポインタを初期化せずに使うとバグる
+# # assert 3 'int main() { int *x; *x = 3; return print(x); } int print(int *x) { return *x; }'
+# # assert 3 'int main() { char *x; *x = 3; return print(x); } int print(char *x) { return *x; }'
+# # 文字列をcharはこういう形で格納できる
+assert 97 'int main() { char y = "a"[0]; return y; }'
+assert 97 'int main() { char y = *"a"; return y; }'
+# # ↓ []はポインタであれば使える，ただデリファレンスしているだけだから
+assert 3 'int main() { int x = 3; int *y = &x; return y[0]; }'
+# # 文字列をcharに格納はまだできない？
+# # これは文字列がvarの配列なので，デリファレンスしないといけない
+# # assert 97 'int main() { char y = "a"; return y; }'
+# # ↓ こう書くといい
+assert 97 'int main() { char *y = "a"; return *y; }'
+assert 97 'int main() { char *y = "a"; return y[0]; }'
+assert 97 'int main() { char *y = "a";  char *x = y; return *x; }'
+# # ↓ できちゃダメだけど，こういう書き方もできる．"a"はアドレスを返すから，intでそれをアドレスとして扱うことで，実現できる（現状intとポインタは同じサイズなので可能）
+assert 97 'int main() { int y = "a";  char *x = y; return *x; }'
+# # assert 97 'int main() { char y; char *x = &y; *x = "a"; return print(x); } int print(char *x) { return *x; }'
+
 assert 3 'int main() { int x[2]; int *y=&x; *y=3; return *x; }'
 assert 3 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
 assert 4 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }'
 assert 5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
+assert 5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
 
-assert 0 'int main() { int x[2][3]; int *y=x; *y=0; return **x; }'
+assert 3 'int main() { int x[2][3]; int *y=x; *y=3; return **x; }'
+
+# # ↓ 配列への代入を試みようとしているのでだめ
+# # assert 3 'int main() { int x[2][3]; *x=3; return x[0][0]; }'
+assert 3 'int main() { int x[2][3]; **x=3; return x[0][0]; }'
+assert 3 'int main() { int x[2][3]; *x[0]=3; return x[0][0]; }'
+
+# # ↓ これはなぜ配列自体への代入じゃないの？ → 暗黙の型変換？ で xはx[0]のポインタとなるはずがx[0][0]のポインタになってる
+assert 3 'int main() { int x[2][3]; int *y=x; *y=3; return x[0][0]; }'
+assert 3 'int main() { int x[2][3]; int *y=*x; *y=3; return x[0][0]; }'
+assert 3 'int main() { int x[2]; int *y=x; *y=3; return x[0]; }'
+# # assert 3 'int main() { int x[2][3]; int *y=x; **y=3; return x[0][0]; }'
+
 assert 1 'int main() { int x[2][3]; int *y=x; *(y+1)=1; return *(*x+1); }'
 assert 2 'int main() { int x[2][3]; int *y=x; *(y+2)=2; return *(*x+2); }'
 assert 3 'int main() { int x[2][3]; int *y=x; *(y+3)=3; return **(x+1); }'
@@ -131,7 +172,7 @@ assert 5 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *(x+2); }'
 assert 5 'int main() { int x[3]; *x=3; x[1]=4; x[2]=5; return *(x+2); }'
 assert 5 'int main() { int x[3]; *x=3; x[1]=4; 2[x]=5; return *(x+2); }'
 assert 5 'int main() { int x[3]; *x=3; x[1]=4; 2[x]=5; return x[2]; }'
-assert 0 'int main() { int x[2][3]; int *y=x; y[0]=0; return x[0][0]; }'
+assert 3 'int main() { int x[2][3]; int *y=x; y[0]=3; return x[0][0]; }'
 assert 1 'int main() { int x[2][3]; int *y=x; y[1]=1; return x[0][1]; }'
 assert 2 'int main() { int x[2][3]; int *y=x; y[2]=2; return x[0][2]; }'
 assert 3 'int main() { int x[2][3]; int *y=x; y[3]=3; return x[1][0]; }'

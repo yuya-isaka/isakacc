@@ -62,6 +62,7 @@ static void load(Type *ty) {
     return;
 
   // やっぱり１
+  // 配列はそもそも弾かれてるから問題ない
   if (ty->size == 1)
     printf("	movsbq (%%rax), %%rax\n");
   else
@@ -72,6 +73,7 @@ static void store(Type *ty) {
   pop("%rdi\n");
 
   // やっぱり１
+  // Assignの左辺に配列が来ないことは保証されてて，左辺の型を受け継いでるから，配列ではないので問題ない
   if (ty->size == 1)
     printf("	mov %%al, (%%rdi)\n");
   else
@@ -107,6 +109,7 @@ static void gen_expr(Node *node) {
     return;
   case ND_VAR:
     gen_addr(node);
+    // printf("\n\n");
     load(node->ty);
     return;
   case ND_ASSIGN:
@@ -119,7 +122,20 @@ static void gen_expr(Node *node) {
     gen_addr(node->lhs);
     return;
   case ND_DEREF:
+    // ここで欲しいのはアドレスが欲しい．つまり中の値はまだ出してほしくない
+    // ここで渡されるのは左辺で，左辺にもし配列が来ていた場合，例えば"aaa"[0]という場合は，"aaa"という配列varと0をnew_addしてからそれをデリファレンスしている．つまりnew_addで生成されるものはarrayとなっている．それはnd-addなのでadd_typeで左辺のものが受け継がれるから，derefのところの左辺には配列が入っていると
+    // でこれを進めると中にはvarで配列のものやからND_VARのところがよばれる
+    // で，その後，それは配列やからそこでアドレスを求めた後に，帰ってくるはず
+    // でも"aaa"でやる場合は，これもvarの配列やねんけど，これはderef
+    // で呼ばれないから，そのままvarがよばれる，なので，それは配列とみなされて
+    // アドレスだけが残る
+    // なのでその中身自体を参照することができていないということか
+    // 文字列だけの時はそれはvarとして扱われているから，
+    // varで配列の時，こうやって書きながらの方が割と整理できている気がする
+    // 「varで配列」これはキーワード
+    // varで配列のやつはそのままアクセスしても，アドレスが得られるだけ．つまりデリファレンスしないといけない
     gen_expr(node->lhs);
+    // printf("\n\n\n");
     load(node->ty);
     return;
   case ND_FUNCALL: {

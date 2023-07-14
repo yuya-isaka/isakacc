@@ -510,6 +510,16 @@ static Node *primary(Token **rest, Token *tok) {
     Obj *var = new_string_literal(tok->str, tok->ty);
     *rest = tok->next;
     return new_var_node(var, tok); // わかってなかた(けどできた)
+    // これだとerror nd_derefでエラー
+    // つまり，「Derefの先はポインタじゃないとだめ（つまり生ポインタか配列じゃないとダメ）」
+    // でもここでのnew_var_nodeは「varの配列」では？
+    // だけどここで返されるのは，varの配列のbaseのタイプを持ったderefが返される
+    // なので，"aaa"[0]のpost_fixをやるときに，new_addのところでは，ただのbaseになってる
+    // つまり配列として扱われない
+    // これをやるべきなのは文字列リテラルではなく，文字に対してはこの処理をする
+    // 文字列リテラルは配列でアクセスできる必要がある．
+    // []でアクセスできるのは，その左側のタイプが配列の時のみ（正確にはポインタの時のみ）
+    // return new_unary(ND_DEREF, new_var_node(var, tok), tok);
   }
 
   if (tok->kind == TK_IDENT) {
@@ -530,7 +540,7 @@ static Node *primary(Token **rest, Token *tok) {
     return new_num(node->ty->size, tok);
   }
 
-  error_tok(tok, "error primary");
+  error_tok(tok, "error primary: %s", strndup(tok->loc, tok->len));
 }
 
 static Token *function(Token *tok, Type *ty) {
