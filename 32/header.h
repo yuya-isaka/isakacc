@@ -14,6 +14,20 @@ typedef enum {
   TK_EOF,
 } TokenKind;
 
+typedef struct Type Type;
+
+typedef struct Token Token;
+
+struct Token {
+  TokenKind kind;
+  Token *next;
+  int val;
+  char *loc;
+  int len;
+  char *str;
+  Type *ty;
+};
+
 typedef enum {
   TY_INT,
   TY_CHAR,
@@ -22,28 +36,15 @@ typedef enum {
   TY_FUNC,
 } TypeKind;
 
-typedef struct Type Type;
-
-typedef struct Token Token;
-struct Token {
-  TokenKind kind;
-  Token *next;
-  int val;
-  char *loc;
-  int len;
-  Type *ty;
-  char *str;
-};
-
 struct Type {
   TypeKind kind;
   int size;
   Type *next;
   Type *base;
   Type *return_ty;
-  int array_len;
-  Token *name;
   Type *params;
+  Token *name;
+  int array_len;
 };
 
 extern Type *ty_int;

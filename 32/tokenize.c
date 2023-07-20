@@ -11,7 +11,7 @@ void error(char *fmt, ...) {
   exit(1);
 }
 
-void verror(char *at, char *fmt, va_list ap) {
+static void verror(char *at, char *fmt, va_list ap) {
   int len = at - user_input;
   fprintf(stderr, "%s\n", user_input);
   fprintf(stderr, "%*s", len, "");
@@ -34,7 +34,7 @@ void error_tok(Token *tok, char *fmt, ...) {
   verror(tok->loc, fmt, ap);
 }
 
-Token *new_token(TokenKind kind, char *start, char *end) {
+static Token *new_token(TokenKind kind, char *start, char *end) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->loc = start;
@@ -42,18 +42,18 @@ Token *new_token(TokenKind kind, char *start, char *end) {
   return tok;
 }
 
-bool is_ident1(char name) {
+static bool is_ident1(char name) {
   return ('a' <= name && name <= 'z') || ('A' <= name && name <= 'Z') ||
          (name == '_');
 }
 
-bool is_ident2(char name) { return is_ident1(name) || isdigit(name); }
+static bool is_ident2(char name) { return is_ident1(name) || isdigit(name); }
 
-bool start_with(char *p, char *target) {
+static bool start_with(char *p, char *target) {
   return strncmp(p, target, strlen(target)) == 0;
 }
 
-int read_punct(char *p) {
+static int read_punct(char *p) {
   if (start_with(p, "==") || start_with(p, "!=") || start_with(p, "<=") ||
       start_with(p, ">="))
     return 2;
@@ -61,11 +61,11 @@ int read_punct(char *p) {
   return ispunct(*p) ? 1 : 0;
 }
 
-bool equal(Token *tok, char *p) {
+static bool equal(Token *tok, char *p) {
   return memcmp(tok->loc, p, tok->len) == 0 && strlen(p) == tok->len;
 }
 
-bool is_keyword(Token *tok) {
+static bool is_keyword(Token *tok) {
   static char *kw[] = {"return", "if",  "else",   "for",
                        "while",  "int", "sizeof", "char"};
   for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
@@ -74,7 +74,7 @@ bool is_keyword(Token *tok) {
   return false;
 }
 
-void convert_keyword(Token *tok) {
+static void convert_keyword(Token *tok) {
   for (Token *cur = tok; cur->kind != TK_EOF; cur = cur->next)
     if (is_keyword(cur))
       cur->kind = TK_KEYWORD;
@@ -107,7 +107,7 @@ static char *string_literal_end(char *p) {
   char *start = p;
   for (; *p != '"'; p++) {
     if (*p == '\n' || *p == '\0')
-      error_at(start, "error read_string_end");
+      error_at(start, "error string_literal_end");
     if (*p == '\\')
       p++;
   }
@@ -119,7 +119,7 @@ static Token *read_string_literal(char *start) {
   char *buf = calloc(1, end - start);
   int len = 0;
 
-  for (char *p = start + 1; p < end;) { // 注意
+  for (char *p = start + 1; p < end;) {
     if (*p == '\\') {
       buf[len++] = read_escaped_char(p + 1);
       p += 2;
@@ -128,11 +128,8 @@ static Token *read_string_literal(char *start) {
     }
   }
 
-  // ヌル文字は何文字あってもいい？
-  // ほとんどのC言語の関数は一番最初のヌル文字を見つけたら停止する
-
   Token *tok = new_token(TK_STR, start, end + 1);
-  tok->ty = array_of(ty_char, len + 1); // 注意
+  tok->ty = array_of(ty_char, len + 1);
   tok->str = buf;
   return tok;
 }
