@@ -141,6 +141,9 @@ assert 97 'int main() { char *y = "a";  char *x = y; return *x; }'
 # # ↓ できちゃダメだけど，こういう書き方もできる．"a"はアドレスを返すから，intでそれをアドレスとして扱うことで，実現できる（現状intとポインタは同じサイズなので可能）
 assert 97 'int main() { int y = "a";  char *x = y; return *x; }'
 # # assert 97 'int main() { char y; char *x = &y; *x = "a"; return print(x); } int print(char *x) { return *x; }'
+# # ポインタを配列0でアクセスできる
+assert 3 'int main() { int x = 3; int *y = &x; return y[0]; }'
+
 
 assert 3 'int main() { int x[2]; int *y=&x; *y=3; return *x; }'
 assert 3 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
@@ -198,7 +201,7 @@ assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
 assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
 assert 8 'int main() { int x=1; return sizeof(x=2); }'
 assert 1 'int main() { int x=1; sizeof(x=2); return x; }'
-# assert 0 'int main[3] { return 0; }' 現状行けてまう
+# assert 0 'int main[3] { return 0; }' 現状行けてまう　いけなくなった．最初の時点でTY_FUNCか確認するから
 
 assert 0 'int x; int main() { return x; }'
 assert 3 'int x; int main() { x=3; return x; }'
