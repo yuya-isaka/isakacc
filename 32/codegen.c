@@ -57,6 +57,7 @@ void emit_data(Obj *prog) {
 }
 
 void gen_expr(Node *node);
+void gen_stmt(Node *node);
 
 void gen_addr(Node *node) {
   switch (node->kind) {
@@ -121,6 +122,10 @@ void gen_expr(Node *node) {
   case ND_DEREF:
     gen_expr(node->lhs);
     load(node->ty);
+    return;
+  case ND_STMT_EXPR:
+    for (Node *cur = node->body; cur; cur = cur->next)
+      gen_stmt(cur);
     return;
   case ND_FUNCALL: {
     int nargs = 0;

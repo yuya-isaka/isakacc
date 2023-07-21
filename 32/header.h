@@ -73,6 +73,7 @@ typedef enum {
   ND_RETURN,
   ND_BLOCK,
   ND_EXPR_STMT,
+  ND_STMT_EXPR,
   ND_IF,
   ND_FOR,
 } NodeKind;

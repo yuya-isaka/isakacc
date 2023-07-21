@@ -96,7 +96,41 @@ static void convert_keyword(Token *tok) {
       cur->kind = TK_KEYWORD;
 }
 
-static int read_escaped_char(char *p) {
+static int from_hex(char c) {
+  if ('0' <= c && c <= '9')
+    return c - '0';
+  if ('a' <= c && c <= 'f')
+    return c - 'a' + 10;
+  return c - 'A' + 10;
+}
+
+static int read_escaped_char(char **rest, char *p) {
+  if ('0' <= *p && *p <= '7') {
+    int c = *p++ - '0';
+    if ('0' <= *p && *p <= '7') {
+      c = (c << 3) + (*p++ - '0');
+      if ('0' <= *p && *p <= '7')
+        c = (c << 3) + (*p++ - '0');
+    }
+    *rest = p;
+    return c;
+  }
+
+  if (*p == 'x') {
+    p++;
+    if (!isxdigit(*p))
+      error_at(p, "invalid hex");
+
+    int c = 0;
+    for (; isxdigit(*p); p++)
+      c = (c << 4) + from_hex(*p);
+
+    *rest = p;
+    return c;
+  }
+
+  *rest = p + 1;
+
   switch (*p) {
   case 'a':
     return '\a';
@@ -137,8 +171,7 @@ static Token *read_string_literal(char *start) {
 
   for (char *p = start + 1; p < end;) {
     if (*p == '\\') {
-      buf[len++] = read_escaped_char(p + 1);
-      p += 2;
+      buf[len++] = read_escaped_char(&p, p + 1);
     } else {
       buf[len++] = *p++;
     }
