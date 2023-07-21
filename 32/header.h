@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -137,3 +138,4 @@ bool consume(Token **rest, Token *tok, char *target);
 Token *skip(Token *tok, char *target);
 Obj *parse(Token *tok);
 char *format(char *fmt, ...);
+void codegen(Obj *prog);

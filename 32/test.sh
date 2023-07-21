@@ -14,18 +14,18 @@ assert() {
 	expected="$1"
 	input="$2"
 
-	./isakacc "$input"
-	# ./isakacc "$input" > tmp.s || exit
-	# gcc -o tmp tmp.s tmp2.o
-	# ./tmp
-	# actual="$?"
+	# ./isakacc "$input"
+	./isakacc "$input" > tmp.s || exit
+	gcc -o tmp tmp.s tmp2.o
+	./tmp
+	actual="$?"
 
-	# if [ "$expected" = "$actaul" ]; then
-	# 	echo "$input => $actual"
-	# else
-	# 	echo "$input => $expected expected, but got $actual"
-	# 	exit 1
-	# fi
+	if [ "$expected" = "$actual" ]; then
+		echo "$input => $actual"
+	else
+		echo "$input => $expected expected, but got $actual"
+		exit 1
+	fi
 }
 
 assert 0 'int main() { return 0; }'

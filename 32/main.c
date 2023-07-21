@@ -8,5 +8,7 @@ int main(int argc, char **argv) {
 
   Obj *prog = parse(tok);
 
+  codegen(prog);
+
   return 0;
 }

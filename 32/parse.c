@@ -27,7 +27,7 @@ static Type *func_params(Token **rest, Token *tok, Type *base) {
       tok = skip(tok, ",");
 
     Type *ty = declspec(&tok, tok);
-    ty = declarator(&tok, tok, base);
+    ty = declarator(&tok, tok, ty);
     cur = cur->next = copy_ty(ty);
   }
 
