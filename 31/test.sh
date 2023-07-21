@@ -145,6 +145,8 @@ assert 3 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
 assert 4 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }'
 assert 5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
 assert 5 'int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
+# # ↓ デリファレンス先はbaseがないとダメ（アドレスもしくは配列）じゃないとダメ（型でチェックされる）
+# # assert 4 'int main() { int x; x=3; *(x+1)=4;  return *(x+1); }'
 
 assert 3 'int main() { int x[2][3]; int *y=x; *y=3; return **x; }'
 
@@ -196,7 +198,8 @@ assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
 assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
 assert 8 'int main() { int x=1; return sizeof(x=2); }'
 assert 1 'int main() { int x=1; sizeof(x=2); return x; }'
-# assert 0 'int main[3] { return 0; }' 現状行けてまう
+# # ↓ 今はもうだめ
+# # assert 0 'int main[3] { return 0; }'
 
 assert 0 'int x; int main() { return x; }'
 assert 3 'int x; int main() { x=3; return x; }'
@@ -209,6 +212,7 @@ assert 3 'int x[4]; int main() { x[0]=0; x[1]=1; x[2]=2; x[3]=3; return x[3]; }'
 
 assert 8 'int x; int main() { return sizeof(x); }'
 assert 32 'int x[4]; int main() { return sizeof(x); }'
+assert 32 'int m; int y; int z[6]; int x[4]; int main() { return sizeof(x); }'
 
 assert 1 'int main() { char x=1; return x; }'
 assert 1 'int main() { char x=1; char y=2; return x; }'

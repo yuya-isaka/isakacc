@@ -132,7 +132,8 @@ bool consume(Token **rest, Token *tok, char *target) {
 Token *skip(Token *tok, char *target) {
   if (equal(tok, target))
     return tok->next;
-  error_tok(tok, "error skip: %s", strndup(tok->loc, tok->len));
+  error_tok(tok, "error skip: expected:%s actual:%s", target,
+            strndup(tok->loc, tok->len));
 }
 
 static bool is_keyword(Token *tok) {

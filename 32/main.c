@@ -6,5 +6,7 @@ int main(int argc, char **argv) {
 
   Token *tok = tokenize(argv[1]);
 
+  Obj *prog = parse(tok);
+
   return 0;
 }

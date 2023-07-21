@@ -61,8 +61,24 @@ static int read_punct(char *p) {
   return ispunct(*p) ? 1 : 0;
 }
 
-static bool equal(Token *tok, char *p) {
+bool equal(Token *tok, char *p) {
   return memcmp(tok->loc, p, tok->len) == 0 && strlen(p) == tok->len;
+}
+
+bool consume(Token **rest, Token *tok, char *target) {
+  if (equal(tok, target)) {
+    *rest = tok->next;
+    return true;
+  }
+  *rest = tok;
+  return false;
+}
+
+Token *skip(Token *tok, char *target) {
+  if (equal(tok, target)) {
+    return tok->next;
+  }
+  error_tok(tok, "error skip");
 }
 
 static bool is_keyword(Token *tok) {
