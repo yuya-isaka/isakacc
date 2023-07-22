@@ -15,7 +15,7 @@ assert() {
 	input="$2"
 
 	# ./isakacc "$input"
-	./isakacc "$input" > tmp.s || exit
+	echo "$input" | ./isakacc - > tmp.s || exit
 	gcc -o tmp tmp.s tmp2.o
 	./tmp
 	actual="$?"

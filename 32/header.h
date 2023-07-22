@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -127,7 +128,7 @@ struct Obj {
 void error(char *fmt, ...);
 void error_at(char *at, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
-Token *tokenize(char *p);
+Token *tokenize_file(char *filename);
 Type *array_of(Type *base, int len);
 Type *copy_ty(Type *ty);
 Type *type_func(Type *base);

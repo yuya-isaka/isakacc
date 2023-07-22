@@ -1,5 +1,7 @@
 #include "header.h"
 
+static char *current_filename;
+
 static char *user_input;
 
 void error(char *fmt, ...) {
@@ -12,9 +14,26 @@ void error(char *fmt, ...) {
 }
 
 static void verror(char *at, char *fmt, va_list ap) {
-  int len = at - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", len, "");
+
+  char *line = at;
+  while (user_input < line && line[-1] != '\n')
+    line--;
+
+  char *end = at;
+  while (*end != '\n')
+    end++;
+
+  int line_no = 1;
+  for (char *p = user_input; p < line; p++)
+    if (*p == '\n')
+      line_no++;
+
+  int indent = fprintf(stderr, "%s:%d: ", current_filename, line_no);
+  fprintf(stderr, "%.*s\n", (int)(end - line), line);
+
+  int pos = at - line + indent;
+
+  fprintf(stderr, "%*s", pos, "");
   fprintf(stderr, "^   ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
@@ -183,7 +202,8 @@ static Token *read_string_literal(char *start) {
   return tok;
 }
 
-Token *tokenize(char *p) {
+Token *tokenize(char *filename, char *p) {
+  current_filename = filename;
   user_input = p;
   Token head = {};
   Token *cur = &head;
@@ -231,3 +251,43 @@ Token *tokenize(char *p) {
   convert_keyword(head.next);
   return head.next;
 }
+
+static char *read_file(char *path) {
+  FILE *fp;
+
+  // -の場合は標準入力から
+  if (strcmp(path, "-") == 0) {
+    fp = stdin;
+  } else {
+    fp = fopen(path, "r");
+    if (!fp)
+      error("cannot open %s: %s", path, strerror(errno));
+    // エラーメッセージを生成
+  }
+
+  char *buf;
+  size_t buflen;
+  FILE *out = open_memstream(&buf, &buflen);
+
+  // ファイルからデータを4096バイトずつ読み取り，読みとったデータをメモリストリームに書き込む
+  // フィアルの終端まで繰り返す
+  for (;;) {
+    char buf2[4096];
+    int n = fread(buf2, 1, sizeof(buf2), fp);
+    if (n == 0)
+      break;
+    fwrite(buf2, 1, n, out);
+  }
+
+  if (fp != stdin)
+    fclose(fp);
+
+  fflush(out);
+  if (buflen == 0 || buf[buflen - 1] != '\n')
+    fputc('\n', out);
+  fputc('\0', out);
+  fclose(out);
+  return buf;
+}
+
+Token *tokenize_file(char *path) { return tokenize(path, read_file(path)); }
