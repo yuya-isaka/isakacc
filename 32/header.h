@@ -108,21 +108,21 @@ struct Node {
 };
 
 struct Obj {
-  Obj *next;  // 共通
-  Type *ty;   // 共通
-  char *name; // 共通
+  Obj *next;
+  Type *ty;
+  char *name;
 
-  bool is_func;   // 関数
-  bool is_global; // 共通
+  bool is_func;
+  bool is_global;
 
-  Node *body;  // 関数
-  Obj *locals; // 関数
-  Obj *params; // 関数
+  Node *body;
+  Obj *locals;
+  Obj *params;
 
   char *init_data;
 
-  int offset;     // 変数
-  int stack_size; // 関数
+  int offset;
+  int stack_size;
 };
 
 void error(char *fmt, ...);
