@@ -70,11 +70,11 @@ typedef enum {
   ND_DEREF,
   ND_ADDR,
   ND_FUNCALL,
+  ND_STMT_EXPR,
 
   ND_RETURN,
   ND_BLOCK,
   ND_EXPR_STMT,
-  ND_STMT_EXPR,
   ND_IF,
   ND_FOR,
 } NodeKind;
