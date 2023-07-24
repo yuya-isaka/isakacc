@@ -1,7 +1,23 @@
 #include "header.h"
 
+typedef struct VarScope VarScope;
+struct VarScope {
+  VarScope *next;
+  char *name;
+  Obj *var;
+};
+
+typedef struct Scope Scope;
+struct Scope {
+  Scope *next;
+  VarScope *vars;
+};
+
 static Obj *globals;
 static Obj *locals;
+
+// static Scope scope_instance = {};
+static Scope *scope = &(Scope){};
 
 static Type *declspec(Token **rest, Token *tok) {
   if (equal(tok, "int")) {
@@ -81,10 +97,20 @@ static bool is_function(Token *tok, Type *ty) {
   return ty->kind == TY_FUNC;
 }
 
+static VarScope *push_scope(char *name, Obj *var) {
+  VarScope *sc = calloc(1, sizeof(VarScope));
+  sc->name = name;
+  sc->var = var;
+  sc->next = scope->vars;
+  scope->vars = sc;
+  return sc;
+}
+
 static Obj *new_var(char *name, Type *ty) {
   Obj *var = calloc(1, sizeof(Obj));
   var->name = name;
   var->ty = ty;
+  push_scope(name, var);
   return var;
 }
 
@@ -253,9 +279,19 @@ static Node *stmt(Token **rest, Token *tok) {
   return expr_stmt(rest, tok);
 }
 
+static void enter_scope(void) {
+  Scope *sc = calloc(1, sizeof(Scope));
+  sc->next = scope;
+  scope = sc;
+}
+
+static void leave_scope(void) { scope = scope->next; }
+
 static Node *compound_stmt(Token **rest, Token *tok) {
   Node head = {};
   Node *cur = &head;
+
+  enter_scope();
 
   while (!equal(tok, "}")) {
     if (is_typename(tok))
@@ -264,6 +300,8 @@ static Node *compound_stmt(Token **rest, Token *tok) {
       cur = cur->next = stmt(&tok, tok);
     add_type(cur);
   }
+
+  leave_scope();
 
   *rest = skip(tok, "}");
 
@@ -488,13 +526,10 @@ static Node *run_funcall(Token **rest, Token *tok) {
 }
 
 static Obj *find_lvar(Token *tok) {
-  for (Obj *var = locals; var; var = var->next)
-    if (equal(tok, var->name))
-      return var;
-  for (Obj *var = globals; var; var = var->next)
-    if (equal(tok, var->name))
-      return var;
-
+  for (Scope *sc = scope; sc; sc = sc->next)
+    for (VarScope *sc2 = sc->vars; sc2; sc2 = sc2->next)
+      if (equal(tok, sc2->name))
+        return sc2->var;
   return NULL;
 }
 
@@ -553,6 +588,7 @@ static Token *function(Token *tok, Type *ty) {
   var->is_func = true;
 
   locals = NULL;
+  enter_scope();
 
   create_params_lvar(ty->params);
   var->params = locals;
@@ -560,6 +596,7 @@ static Token *function(Token *tok, Type *ty) {
   tok = skip(tok, "{");
   var->body = compound_stmt(&tok, tok);
   var->locals = locals;
+  leave_scope();
   return tok;
 }
 
