@@ -140,4 +140,4 @@ bool consume(Token **rest, Token *tok, char *target);
 Token *skip(Token *tok, char *target);
 Obj *parse(Token *tok);
 char *format(char *fmt, ...);
-void codegen(Obj *prog);
+void codegen(Obj *prog, FILE *out);

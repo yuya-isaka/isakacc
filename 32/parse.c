@@ -133,20 +133,20 @@ static Node *new_var_node(Obj *var, Token *tok) {
   return node;
 }
 
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok) {
+static Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok) {
   Node *node = new_node(kind, tok);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
-Node *new_unary(NodeKind kind, Node *lhs, Token *tok) {
+static Node *new_unary(NodeKind kind, Node *lhs, Token *tok) {
   Node *node = new_node(kind, tok);
   node->lhs = lhs;
   return node;
 }
 
-Node *new_num(int val, Token *tok) {
+static Node *new_num(int val, Token *tok) {
   Node *node = new_node(ND_NUM, tok);
   node->val = val;
   return node;

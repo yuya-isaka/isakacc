@@ -9,6 +9,7 @@ $(OBJS): header.h
 
 test: isakacc
 	./test.sh
+	./test-driver.sh
 
 clean:
 	rm -f tmp* *.o *~ isakacc

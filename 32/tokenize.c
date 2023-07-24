@@ -209,6 +209,21 @@ Token *tokenize(char *filename, char *p) {
   Token *cur = &head;
 
   while (*p) {
+    if (start_with(p, "//")) {
+      p += 2;
+      while (*p != '\n')
+        p++;
+      continue;
+    }
+
+    if (start_with(p, "/*")) {
+      char *q = strstr(p + 2, "*/");
+      if (!q)
+        error_at(p, "unclosed block comment");
+      p = q + 2;
+      continue;
+    }
+
     if (isspace(*p)) {
       p++;
       continue;
