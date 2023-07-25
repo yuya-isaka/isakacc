@@ -168,6 +168,21 @@ bool equal(Token *tok, char *target) {
   return memcmp(tok->loc, target, tok->len) == 0 && strlen(target) == tok->len;
 }
 
+bool consume(Token **rest, Token *tok, char *target) {
+  if (equal(tok, target)) {
+    *rest = tok->next;
+    return true;
+  }
+  *rest = tok;
+  return false;
+}
+
+Token *skip(Token *tok, char *target) {
+  if (equal(tok, target))
+    return tok->next;
+  error_tok(tok, "error skip: %s", strndup(tok->loc, tok->len));
+}
+
 static bool is_keyword(Token *tok) {
   static char *kw[] = {"return", "if",  "else", "while",
                        "for",    "int", "char", "sizeof"};
@@ -230,7 +245,7 @@ static Token *tokenize(char *file_name, char *p) {
       do {
         p++;
       } while (is_ident2(*p));
-      cur = cur->next = new_token(TK_IDNET, start, p);
+      cur = cur->next = new_token(TK_IDENT, start, p);
       continue;
     }
 

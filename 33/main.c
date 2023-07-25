@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 
   Token *tok = tokenize_file(input_path);
 
-  // Obj *prog = parse(tok);
+  Obj *prog = parse(tok);
   FILE *out = open_file(opt_o);
 
   return 0;

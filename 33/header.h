@@ -9,7 +9,7 @@
 
 typedef enum {
   TK_NUM,
-  TK_IDNET,
+  TK_IDENT,
   TK_PUNCT,
   TK_STR,
   TK_KEYWORD,
@@ -51,9 +51,89 @@ struct Type {
 extern Type *ty_int;
 extern Type *ty_char;
 
+typedef enum {
+  ND_ADD,
+  ND_SUB,
+  ND_MUL,
+  ND_DIV,
+  ND_EQ,
+  ND_NE,
+  ND_LT,
+  ND_LE,
+
+  ND_NUM,
+  ND_NEG,
+  ND_VAR,
+  ND_ASSIGN,
+  ND_ADDR,
+  ND_DEREF,
+  ND_STMT_EXPR,
+  ND_FUNCALL,
+
+  ND_RETURN,
+  ND_BLOCK,
+  ND_EXPR_STMT,
+  ND_IF,
+  ND_FOR,
+} NodeKind;
+
+typedef struct Obj Obj;
+
+typedef struct Node Node;
+struct Node {
+  NodeKind kind;
+  Node *next;
+  Token *tok;
+  Type *ty;
+
+  Node *lhs;
+  Node *rhs;
+
+  Node *cond;
+  Node *then;
+  Node *els;
+
+  Node *init;
+  Node *inc;
+
+  Node *body;
+
+  int val;
+  Obj *var;
+
+  char *funcname;
+  Node *args;
+};
+
+typedef struct Obj Obj;
+struct Obj {
+  Obj *next;
+  char *name;
+  Type *ty;
+
+  bool is_func;
+  bool is_local;
+
+  Node *body;
+  Obj *params;
+  Obj *locals;
+
+  char *init_data;
+
+  int offset;
+  int stack_size;
+};
+
 void error(char *fmt, ...);
 void error_at(char *at, char *fmt, ...);
 void error_tok(Token *tok, char *fmt, ...);
 Token *tokenize_file(char *input_path);
-Type *array_of(Type *base, int len);
 bool equal(Token *tok, char *target);
+bool consume(Token **rest, Token *tok, char *target);
+Token *skip(Token *tok, char *target);
+Type *array_of(Type *base, int len);
+Type *pointer_to(Type *base);
+Type *copy_ty(Type *ty);
+Type *func_type(Type *return_ty);
+
+Obj *parse(Token *tok);
