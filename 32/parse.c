@@ -44,7 +44,9 @@ static Type *func_params(Token **rest, Token *tok, Type *base) {
 
     Type *ty = declspec(&tok, tok);
     ty = declarator(&tok, tok, ty);
+    // printf("%s: %p: %d\n", strndup(tok->loc, tok->len), ty, ty->kind);
     cur = cur->next = copy_ty(ty);
+    // cur = cur->next = ty;
   }
 
   *rest = skip(tok, ")");
@@ -116,6 +118,7 @@ static Obj *new_var(char *name, Type *ty) {
 
 static Obj *new_gvar(char *name, Type *ty) {
   Obj *var = new_var(name, ty);
+  // printf("%p: %d\n", var->ty, var->ty->kind);
   var->is_global = true;
   var->next = globals;
   globals = var;
@@ -600,7 +603,7 @@ static Token *function(Token *tok, Type *ty) {
   return tok;
 }
 
-static Token *global_variable(Token *tok, Type *ty) {
+static Token *global_variable(Token *tok, Type *basety) {
   bool first = true;
   while (!equal(tok, ";")) {
     if (!first) {
@@ -608,7 +611,8 @@ static Token *global_variable(Token *tok, Type *ty) {
     }
     first = false;
 
-    ty = declarator(&tok, tok, ty);
+    Type *ty = declarator(&tok, tok, basety);
+    // new_gvar(get_ident(ty->name), copy_ty(ty));
     new_gvar(get_ident(ty->name), ty);
   }
 

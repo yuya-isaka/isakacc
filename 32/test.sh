@@ -111,7 +111,9 @@ assert 136 'int main() { return add6(1,2,add6(3,add6(4,5,6,7,8,9),10,11,12,13),1
 
 assert 32 'int main() { return ret32(); } int ret32() { return 32; }'
 assert 7 'int main() { return add2(3,4); } int add2(int x, int y) { return x+y; }'
+assert 7 'int main() { int x = 4; return add2(3,&x); } int add2(int x, int *y) { return x+*y; }'
 assert 1 'int main() { return sub2(4,3); } int sub2(int x, int y) { return x-y; }'
+assert 1 'int main() { int x = 3; return sub2(4,&x); } int sub2(int x, int *y) { return x-*y; }'
 assert 55 'int main() { return fib(9); } int fib(int x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
 
 # # ポインタや配列を関数に渡すのもできている．
@@ -203,6 +205,9 @@ assert 8 'int main() { int x=1; return sizeof(x=2); }'
 assert 1 'int main() { int x=1; sizeof(x=2); return x; }'
 # assert 0 'int main[3] { return 0; }' 現状行けてまう　いけなくなった．最初の時点でTY_FUNCか確認するから
 
+# # # ちゃんとエラーでる
+# # assert 3 'int x, *y, *z, zz, zzz; int main() { x=3; zz=&x; return *zz; }'
+assert 3 'int x, *y, *z, zz; int main() { zz=3; z = &zz; return *z; }'
 assert 0 'int x; int main() { return x; }'
 assert 3 'int x; int main() { x=3; return x; }'
 assert 7 'int x; int y; int main() { x=3; y=4; return x+y; }'
