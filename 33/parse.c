@@ -105,6 +105,7 @@ static Token *global_variable(Token *tok, Type *basety) {
 
     Type *ty = declarator(&tok, tok, basety);
     new_gvar(get_ident(ty->name), ty);
+    // ここまで
   }
 }
 
