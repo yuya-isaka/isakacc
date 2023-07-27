@@ -135,5 +135,8 @@ Type *array_of(Type *base, int len);
 Type *pointer_to(Type *base);
 Type *copy_ty(Type *ty);
 Type *func_type(Type *return_ty);
+void add_type(Node *node);
+bool is_integer(Type *ty);
 
 Obj *parse(Token *tok);
+char *format(char *fmt, ...);
